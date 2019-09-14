@@ -10,7 +10,7 @@ OBJECTS=$(patsubst %.c,%.o, $(SOURCES))
 TEST_SRC=$(wildcard tests/*_tests.c)
 TESTS=$(patsubst %.c,%,$(TEST_SRC))
 
-TARGET=build/mipd
+TARGET=bin/mipd
 #TARGET=build/mip.a
 #SO_TARGET=$(patsubst %.a,%.so,$(TARGET))
 
@@ -39,7 +39,7 @@ tests: $(TESTS)
 # The Cleaner 
 
 clean:
-	rm -rf build $(OBJECTS) $(TEST)
+	rm -rf bin build $(OBJECTS) $(TEST)
 	rm -f tests/tests.log
 	find . -name "*.gc*" -exec rm {} \;
 	rm -rf `find . -name "*.dSYM" -print`
