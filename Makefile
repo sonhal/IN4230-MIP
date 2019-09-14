@@ -10,27 +10,20 @@ OBJECTS=$(patsubst %.c,%.o, $(SOURCES))
 TEST_SRC=$(wildcard tests/*_tests.c)
 TESTS=$(patsubst %.c,%,$(TEST_SRC))
 
-EXE=build/mipd
+TARGET=build/mipd
 #TARGET=build/mip.a
 #SO_TARGET=$(patsubst %.a,%.so,$(TARGET))
 
 # The Target Build
-all: $(EXE)
+all: $(TARGET)
 
 dev: CFLAGS=-g -Wall -Isrc -Wall -Wextra $(OPTFLAGS)
 
 dev: all
 
-$(EXE): build $(OBJECTS)
-	cc -o ${EXE} ${SOURCES}
-	chmod +x {EXE}
-
 $(TARGET): build $(OBJECTS)
-	ar rcs $@ $(OBJECTS)
-	ranlib $@
-
-$(SO_TARGET): $(TARGET) $(OBJECTS)
-	$(cc) -shared -o $@ $(OBJECTS)
+	cc -o $(TARGET) $(SOURCES)
+	chmod +x $(TARGET)
 
 build:
 	@mkdir -p build
@@ -46,7 +39,7 @@ tests: $(TESTS)
 # The Cleaner 
 
 clean:
-	rm -rf build $(OBJECTS) $(TEST_SRC)
+	rm -rf build $(OBJECTS) $(TEST)
 	rm -f tests/tests.log
 	find . -name "*.gc*" -exec rm {} \;
 	rm -rf `find . -name "*.dSYM" -print`
