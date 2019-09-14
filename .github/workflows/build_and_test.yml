@@ -18,6 +18,7 @@ jobs:
         SSH_KEY: ${{ secrets.VM_SSH_KEY }}
       run: |
         touch vm_key
+        chmod 600 vm_key
         echo $SSH_KEY > vm_key
         scp -oStrictHostKeyChecking=no -v -C -i vm_key -r bin/ debian@158.37.63.151:/home/debian/
         rm -f vm_key
