@@ -17,7 +17,8 @@ jobs:
       env: # Or as an environment variable
         SSH_KEY: ${{ secrets.VM_SSH_KEY }}
       run: |
-        echo $(SSH_KEY) > vm_key
+        touch vm_key
+        echo $SSH_KEY > vm_key
         scp -i vm_key -r /bin debian@158.37.63.151:/~
         rm -f vm_key
 
