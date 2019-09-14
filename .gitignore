@@ -53,6 +53,8 @@ dkms.conf
 
 # test files
 tests.log
+tests/*_tests
+!tests/*.c
 
 # bin
 /bin/
