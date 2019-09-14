@@ -19,6 +19,6 @@ jobs:
       run: |
         touch vm_key
         echo $SSH_KEY > vm_key
-        scp -C -i vm_key -r bin/ debian@158.37.63.151:/~
+        scp -C -i vm_key -r bin/ debian@158.37.63.151:/home/debian/
         rm -f vm_key
 
