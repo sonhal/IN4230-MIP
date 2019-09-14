@@ -10,11 +10,25 @@
 
 
 void startup();
+int handle_poll();
 
 int main(int argc, char *argv[]){
     check(argc > 1, "mipd [-h] [-d] <socket_application> [MIP addresses ...]");
     startup();
+    int rc = handle_poll();
+    check(rc != -1, "epolling exited unexpectedly");
 
+    error:
+        return -1;
+
+}
+
+void startup() {
+    pid_t pid = getpid();
+    log_info("MIP daemon started - pid: %d", pid);
+}
+
+int handle_poll(){
     struct epoll_event event;
     int rc = 0;
     int epoll_fd = 0;
@@ -39,12 +53,6 @@ int main(int argc, char *argv[]){
     error:
         if(epoll_fd) close(epoll_fd);
         return -1;
-
-}
-
-void startup() {
-    pid_t pid = getpid();
-    log_info("MIP daemon started - pid: %d", pid);
 }
 
 
