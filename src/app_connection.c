@@ -12,7 +12,7 @@
 void server(int l_so, struct sockaddr_un *so_name);
 
 // Sets up a socket wit the given file name
-int setup_app_socket(){
+int create_domain_socket(){
     int so = 0;
 
     so = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -24,6 +24,38 @@ int setup_app_socket(){
         if (so) close(so);
         return -1;
 }
+
+int setup_domain_socket(struct sockaddr_un *so_name, char *socket_name, unsigned int socket_name_size){
+    int so = 0;
+    int rc = 0;
+    
+    check(socket_name_size <= sizeof(so_name->sun_path), "Socket name is to large");
+
+    so = create_domain_socket();
+
+    // Zero out the name struct
+    memset(&so_name, 0, sizeof(struct sockaddr_un));
+
+    // Prepare UNIX socket name
+    so_name->sun_family = AF_UNIX;
+    strncpy(so_name->sun_path, socket_name, sizeof(so_name->sun_path) - 1);
+
+    // Delete socket file if it already exists
+    unlink(so_name->sun_path);
+
+    /* Bind socket to socket name (file path)
+       What happes if we pass &so_name?*/
+    rc = bind(so, (const struct sockaddr*)so_name, sizeof(struct sockaddr_un));
+    check(rc != -1, "Binding socket to local address failed");
+
+    return so;
+
+    error:
+        close(so);
+        unlink(so_name->sun_path);
+        return -1;
+}
+
 
 int app_server(int so, char *socket_name, unsigned int socket_name_size){
     struct sockaddr_un so_name;
