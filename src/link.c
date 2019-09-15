@@ -52,8 +52,9 @@ void print_interface_list(){
     for(ifp = ifaces; ifp != NULL; ifp = ifp->ifa_next){
         if(ifp->ifa_addr != NULL && ifp->ifa_addr->sa_family == AF_PACKET){
             // Copy the address info into out temp variable
-            memcmp(&so_name, (struct sockaddr_ll*)ifp->ifa_addr, sizeof(struct sockaddr_ll));
-            char *addr_str = macaddr_str(&so_name);
+           // memcmp(&so_name, (struct sockaddr_ll*)ifp->ifa_addr, sizeof(struct sockaddr_ll));
+            struct sockaddr_ll *so_fake = (struct sockaddr_ll*)ifp->ifa_addr;
+            char *addr_str = macaddr_str(so_fake);
 
             printf("%s\t%s\n",
                     ifp->ifa_name != NULL ? ifp->ifa_name : "null", addr_str);
