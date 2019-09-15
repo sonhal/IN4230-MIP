@@ -22,7 +22,7 @@ dev: CFLAGS=-g -Wall -Isrc -Wall -Wextra $(OPTFLAGS)
 dev: all
 
 $(TARGET): build $(OBJECTS)
-	cc -o $(TARGET) $(SOURCES)
+	cc $(CFLAGS) -o $(TARGET) $(SOURCES)
 	chmod +x $(TARGET)
 
 build:

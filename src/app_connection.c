@@ -17,7 +17,7 @@ int create_domain_socket(){
 
     so = socket(AF_UNIX, SOCK_STREAM, 0);
     check(so != -1, "Creating socket failed");
-
+    debug("Domain socket created: %d", so);
     return so;
 
     error:
@@ -34,7 +34,7 @@ int setup_domain_socket(struct sockaddr_un *so_name, char *socket_name, unsigned
     so = create_domain_socket();
 
     // Zero out the name struct
-    memset(&so_name, 0, sizeof(struct sockaddr_un));
+    memset(so_name, 0, sizeof(struct sockaddr_un));
 
     // Prepare UNIX socket name
     so_name->sun_family = AF_UNIX;
@@ -44,9 +44,13 @@ int setup_domain_socket(struct sockaddr_un *so_name, char *socket_name, unsigned
     unlink(so_name->sun_path);
 
     /* Bind socket to socket name (file path)
-       What happes if we pass &so_name?*/
+       What happes if we pass &so_name? */
     rc = bind(so, (const struct sockaddr*)so_name, sizeof(struct sockaddr_un));
     check(rc != -1, "Binding socket to local address failed");
+
+    // Listen for connections
+    rc = listen(so, 5);
+    check(rc != -1, "Failed to start listen");
 
     return so;
 
