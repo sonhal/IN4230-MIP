@@ -4,6 +4,8 @@
 #include <sys/epoll.h> 
 #include "dbg.h"
 #include "polling.h"
+#include "app_connection.h"
+#include <string.h>
 
 #define MAX_READ 5
 #define MAX_EVENTS 5
@@ -15,10 +17,21 @@ int handle_poll();
 int main(int argc, char *argv[]){
     check(argc > 1, "mipd [-h] [-d] <socket_application> [MIP addresses ...]");
     startup();
-    int rc = handle_poll();
-    check(rc != -1, "epolling exited unexpectedly");
+
+    //int rc = handle_poll();
+    //check(rc != -1, "epolling exited unexpectedly");
+
+    char *socket_name = argv[1];
+    int socket = 0;
+    int rc = 0;
+    socket = setup_app_socket();
+    rc = app_server(socket, socket_name, strlen(socket_name));
+    check(rc != -1, "App server failed unexpectedly");
+
+    close(socket);
 
     error:
+        close(socket);
         return -1;
 
 }
