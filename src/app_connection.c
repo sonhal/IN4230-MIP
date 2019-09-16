@@ -5,6 +5,10 @@
 #include <sys/un.h>		/* struct sockaddr_un */
 #include <unistd.h>		/* read, close, unlink */
 #include "dbg.h"
+#include <net/ethernet.h>
+#include <linux/if_packet.h>
+#include <net/ethernet.h>
+#include <arpa/inet.h>
 
 
 #define BUF_SIZE 256
@@ -57,6 +61,18 @@ int setup_domain_socket(struct sockaddr_un *so_name, char *socket_name, unsigned
     error:
         close(so);
         unlink(so_name->sun_path);
+        return -1;
+}
+
+
+int setup_raw_socket(){
+    int so = 0;
+
+    so = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    check(so != -1, "Failed to create raw socket");
+    return so;
+
+    error:
         return -1;
 }
 

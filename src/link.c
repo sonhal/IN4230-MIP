@@ -8,6 +8,10 @@
 #include <ifaddrs.h>		/* getifaddrs */
 #include "dbg.h"
 
+#define BUF_SIZE 1600
+
+extern void DumpHex(const void* data, size_t size);
+
 
 struct mip_header {
     unsigned int t : 1;
@@ -18,7 +22,6 @@ struct mip_header {
     uint8_t dst_addr;
     uint8_t src_addr;
 } __attribute__((packed));
-
 
 
 char *macaddr_str(struct sockaddr_ll *sa){
@@ -41,7 +44,7 @@ char *macaddr_str(struct sockaddr_ll *sa){
 
 void print_interface_list(){
     int rc;
-    struct sockaddr_ll so_name;
+    //struct sockaddr_ll so_name;
     struct ifaddrs *ifaces, *ifp;
 
     rc = getifaddrs(&ifaces);
@@ -72,3 +75,17 @@ void print_interface_list(){
         log_warn("Failed to print MAC addresses");
         return;
 }
+
+
+/* void print_raw_socket(int socket){
+    int rc;
+    char buf[BUF_SIZE];
+
+    rc = recv(socket, buf, BUF_SIZE, 0);
+    check(rc != -1, "Failed to read raw socket");
+    printf("Received Ethernet frame\n");
+    DumpHex(buf, rc);
+
+    error:
+        return -1;
+} */

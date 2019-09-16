@@ -11,7 +11,7 @@
 #include <stdlib.h> 		/* malloc */
 
 
-#define MAX_READ 5
+#define MAX_READ 1600
 #define MAX_EVENTS 5
 
 
@@ -26,25 +26,29 @@ int main(int argc, char *argv[]){
     //check(rc != -1, "epolling exited unexpectedly");
 
     char *socket_name = argv[1];
-    int socket = 0;
+    int local_socket = 0;
+    int raw_socket = 0;
     int rc = 0;
     struct sockaddr_un so_name;
     
-    socket = setup_domain_socket(&so_name, socket_name, strnlen(socket_name, 256));
-
+    local_socket = setup_domain_socket(&so_name, socket_name, strnlen(socket_name, 256));
+    check(local_socket != -1, "Failed to create local socket");
+    raw_socket = setup_raw_socket();
+    check(raw_socket != -1, "Failed to create raw socket");
 
     struct epoll_event stdin_event = create_epoll_in_event(0);
-    struct epoll_event local_domain_event = create_epoll_in_event(socket);
-    struct epoll_event events_to_handle[] = {stdin_event, local_domain_event};
+    struct epoll_event local_domain_event = create_epoll_in_event(local_socket);
+    struct epoll_event raw_socket_event = create_epoll_in_event(raw_socket);
+    struct epoll_event events_to_handle[] = {stdin_event, local_domain_event, raw_socket_event};
 
 
     int epoll_fd = 0;
-    epoll_fd = setup_epoll(&events_to_handle, 2);
+    epoll_fd = setup_epoll(&events_to_handle, 3);
 
 
     // MAIN application loop
     struct epoll_event events[MAX_EVENTS];
-    rc = epoll_loop(epoll_fd, socket, events, MAX_EVENTS, MAX_READ, 30000);
+    rc = epoll_loop(epoll_fd, local_socket, raw_socket, events, MAX_EVENTS, MAX_READ, 30000);
     check(rc != -1, "epoll loop exited unexpectedly");
 
     // Cleanup
