@@ -134,7 +134,7 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     msgvec[1].iov_len = message_length;
 
       /* Fill out message metadata struct */
-    //memcpy(so_name->sll_addr, broadcast_addr, 1);
+    memcpy(so_name->sll_addr, broadcast_addr, 1);
     msg->msg_name = &so_name;
     msg->msg_namelen = sizeof(struct sockaddr_ll);
 
