@@ -90,7 +90,7 @@ int last_inteface(struct sockaddr_ll *so_name){
     for(ifp = ifaces; ifp != NULL; ifp = ifp->ifa_next){
         if(ifp->ifa_addr != NULL && ifp->ifa_addr->sa_family == AF_PACKET){
             // Copy the address info into out temp variable
-           memcpy(so_name, (struct sockaddr_ll*)ifp->ifa_addr, sizeof(struct sockaddr_ll));
+           memcpy(&so_name, (struct sockaddr_ll*)ifp->ifa_addr, sizeof(struct sockaddr_ll));
             //so_name = (struct sockaddr_ll*)ifp->ifa_addr;
             char *addr_str = macaddr_str(so_name);
 

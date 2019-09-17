@@ -68,7 +68,7 @@ int setup_domain_socket(struct sockaddr_un *so_name, char *socket_name, unsigned
 int setup_raw_socket(){
     int so = 0;
 
-    so = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+    so = socket(AF_PACKET, SOCK_RAW, htons(0xFF));
     check(so != -1, "Failed to create raw socket");
     return so;
 
