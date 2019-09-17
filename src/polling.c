@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -6,6 +7,7 @@
 #include <net/ethernet.h>
 #include <arpa/inet.h>
 #include "dbg.h"
+#include "link.h"
 
 extern void DumpHex(const void* data, size_t size);
 
@@ -125,6 +127,12 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
             else {
                 printf("%zd bytes read\nDomain socket read:\n", bytes_read);
                 printf("%s", read_buffer);
+                struct sockaddr_ll *so_name = calloc(1, sizeof(struct sockaddr_ll));
+                rc = last_inteface(so_name);
+                check(rc != -1, "Failed to collect interface for raw socket message");
+
+                rc = send_raw_packet(raw_socket, so_name, &read_buffer, bytes_read);
+                check(rc != -1, "Failed to send domain socket message to raw socket");
             }
 
             memset(read_buffer, '\0', read_buffer_size);
