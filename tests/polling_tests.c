@@ -3,6 +3,7 @@
 #include "../src/dbg.h"
 #include "minunit.h"
 
+#include "../src/link.c"
 #include "../src/DumpHex.c"
 #include "../src/polling.c"
 
