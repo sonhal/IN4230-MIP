@@ -92,13 +92,15 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     struct msghdr *msg;
     struct mip_header frame_hdr = {};
     struct iovec msgvec[2];
+    uint8_t broad_addr[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+
     
+        /* Hardcode silly message */
+    uint8_t buf[] = {0xde, 0xad, 0xbe, 0xef};
 
     msg = (struct msghdr *)calloc(1, sizeof(struct msghdr));
 
-    /* Hardcode silly message */
-    uint8_t buf[] = {0xde, 0xad, 0xbe, 0xef};
-    //uint8_t broad_addr[] = {0x18, 0x1d, 0xea, 0x16, 0x01, 0x34 };
+
     
 
     /* Fill ethernet header */
@@ -112,7 +114,6 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     msgvec[1].iov_len = 4;
 
 
-    //memcpy(so_name->sll_addr, broad_addr, 6);
     //so_name->sll_ifindex = 3;
     // Debug stuff
     debug("Broadcast address: %hhx %hhx %hhx %hhx %hhx %hhx",
@@ -126,13 +127,13 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
 
       /* Fill out message metadata struct */
    
-   
+    memcpy(so_name->sll_addr, broad_addr, 6);
     msg->msg_name = so_name;
     msg->msg_namelen = sizeof(struct sockaddr_ll);
     msg->msg_iovlen = 2;
     msg->msg_iov = msgvec;
 
-    rc = sendmsg(sd, msg, htons(ETH_P_MIP));
+    rc = sendmsg(sd, msg, 0);
     check(rc != -1, "Failed to send message");
 
     return 0;
