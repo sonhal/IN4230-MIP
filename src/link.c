@@ -132,7 +132,7 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     msg->msg_iovlen = 2;
     msg->msg_iov = msgvec;
 
-    rc = sendmsg(sd, msg, ETH_P_MIP);
+    rc = sendmsg(sd, msg, htons(ETH_P_MIP));
     check(rc != -1, "Failed to send message");
 
     return 0;
@@ -199,7 +199,7 @@ int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *me
 int setup_raw_socket(){
     int so = 0;
 
-    so = socket(AF_PACKET, SOCK_RAW, ETH_P_MIP);
+    so = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_MIP));
     check(so != -1, "Failed to create raw socket");
     return so;
 
