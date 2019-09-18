@@ -12,6 +12,7 @@
 #define ETH_BROADCAST_ADDR 0xff
 #define SOME_ETH_BROADCAST_ADDR {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 #define PROTOCOL_TYPE 0xff
+#define ETH_P_MIP 0x88B5
 
 extern void DumpHex(const void* data, size_t size);
 
@@ -130,7 +131,7 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
 
     /* Hardcode silly message */
     uint8_t buf[] = {0xde, 0xad, 0xbe, 0xef};
-    uint8_t broad_addr[] = {0x18, 0x1d, 0xea, 0x16, 0x01, 0x34 };
+    //uint8_t broad_addr[] = {0x18, 0x1d, 0xea, 0x16, 0x01, 0x34 };
     
 
     /* Fill ethernet header */
@@ -144,7 +145,8 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     msgvec[1].iov_len = 4;
 
 
-    memcpy(so_name->sll_addr, broad_addr, 6);
+    //memcpy(so_name->sll_addr, broad_addr, 6);
+    //so_name->sll_ifindex = 3;
     // Debug stuff
     debug("Broadcast address: %hhx %hhx %hhx %hhx %hhx %hhx",
      so_name->sll_addr[0],
@@ -153,7 +155,6 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
      so_name->sll_addr[3],
      so_name->sll_addr[4],
      so_name->sll_addr[5]);
-    so_name->sll_ifindex = 3;
     debug("sll_ifindex: %d", so_name->sll_ifindex);
 
       /* Fill out message metadata struct */
@@ -164,7 +165,7 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     msg->msg_iovlen = 2;
     msg->msg_iov = msgvec;
 
-    rc = sendmsg(sd, msg, 0);
+    rc = sendmsg(sd, msg, ETH_P_MIP);
     check(rc != -1, "Failed to send message");
 
     return 0;
@@ -226,6 +227,17 @@ int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *me
     
     free(msg);
     return 0;
+}
+
+int setup_raw_socket(){
+    int so = 0;
+
+    so = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_MIP));
+    check(so != -1, "Failed to create raw socket");
+    return so;
+
+    error:
+        return -1;
 }
 
 /* void print_raw_socket(int socket){
