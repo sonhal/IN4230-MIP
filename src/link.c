@@ -6,7 +6,9 @@
 #include <net/ethernet.h>	/* ETH_* */
 #include <arpa/inet.h>		/* htons */
 #include <ifaddrs.h>		/* getifaddrs */
+
 #include "dbg.h"
+#include "mip.h"
 
 #define BUF_SIZE 1600
 #define ETH_BROADCAST_ADDR {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
@@ -15,23 +17,12 @@
 
 extern void DumpHex(const void* data, size_t size);
 
-struct mip_header {
-    unsigned int t;
-    unsigned int r;
-    unsigned int a;
-    unsigned int ttl;
-    unsigned int payload_len;
-    uint8_t dst_addr;
-    uint8_t src_addr;
-} __attribute__((packed));
-
 struct ether_frame {
     uint8_t dst_addr[6];
     uint8_t src_addr[6];
     uint8_t eth_proto[2];
     uint8_t contents[0];
 } __attribute__((packed));
-
 
 
 char *macaddr_str(struct sockaddr_ll *sa){
@@ -50,7 +41,6 @@ char *macaddr_str(struct sockaddr_ll *sa){
     }
     return macaddr;
 }
-
 
 
 int last_inteface(struct sockaddr_ll *so_name){
@@ -180,6 +170,64 @@ int send_raw_package(int sd, struct sockaddr_ll *so_name, char *message, int mes
     return 0;
 }
 
+int send_raw_package_mip(int sd, struct sockaddr_ll *so_name, struct mip_header *mip_header){
+    int so = sd;
+    int rc = 0;
+    struct msghdr *msg;
+    struct iovec msgvec[2];
+    struct ether_frame frame_hdr;
+
+
+    /* Hardcode silly message */
+    uint8_t buf[] = {0xde, 0xad, 0xbe, 0xef};
+
+    /* Fill in Ethernet header */
+    uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
+    memcpy(frame_hdr.dst_addr, broadcast_addr, 6);
+    memcpy(frame_hdr.src_addr, so_name->sll_addr, 6);
+    /* Match the ethertype in packet_so9cket.c: */
+    frame_hdr.eth_proto[0] = 0x88;
+    frame_hdr.eth_proto[1] = 0xB5;
+
+
+    log_info("SENDING WITH PROTOCOL: %hhx%hhx", frame_hdr.eth_proto[0], frame_hdr.eth_proto[1]);
+
+    /* Point to frame header */
+    msgvec[0].iov_base = &frame_hdr;
+    msgvec[0].iov_len = sizeof(struct ether_frame);
+    /* Point to frame payload */
+    msgvec[1].iov_base = mip_header;
+    msgvec[1].iov_len = sizeof(mip_header);
+
+    /* Allocate a zeroed-out message info struct */
+    msg = calloc(1, sizeof(struct msghdr));
+
+    /* Fill out message metadata struct */
+    memcpy(so_name->sll_addr, broadcast_addr, 6);
+    msg->msg_name = so_name;
+    msg->msg_namelen = sizeof(struct sockaddr_ll);
+    msg->msg_iovlen = 2;
+    msg->msg_iov = msgvec;
+
+    printf("Sending %d bytes on if with index: %d\n",
+	 rc, so_name->sll_ifindex);
+
+    /* Construct and send message */
+    rc = sendmsg(so, msg, 0);
+    if (rc == -1) {
+    perror("sendmsg");
+    free(msg);
+    return -1;
+    }
+
+     printf("Sent %d bytes on if with index: %d\n",
+	 rc, so_name->sll_ifindex);
+
+    free(msg);
+    return 0;
+}
+
+
 int setup_raw_socket(){
     int so = 0;
 
@@ -190,16 +238,3 @@ int setup_raw_socket(){
     error:
         return -1;
 }
-
-/* void print_raw_socket(int socket){
-    int rc;
-    char buf[BUF_SIZE];
-
-    rc = recv(socket, buf, BUF_SIZE, 0);
-    check(rc != -1, "Failed to read raw socket");
-    printf("Received Ethernet frame\n");
-    DumpHex(buf, rc);
-
-    error:
-        return -1;
-} */
