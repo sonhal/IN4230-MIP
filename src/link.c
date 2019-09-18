@@ -159,7 +159,7 @@ int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *me
     memcpy(frame_hdr.dst_addr, broadcast_addr, 6);
     memcpy(frame_hdr.src_addr, so_name->sll_addr, 6);
     /* Match the ethertype in packet_socket.c: */
-    frame_hdr.eth_proto[0] = frame_hdr.eth_proto[1] = 0xFF;
+    frame_hdr.eth_proto[0] = frame_hdr.eth_proto[1] = 0xFFFF;
 
     /* Point to frame header */
     msgvec[0].iov_base = &frame_hdr;
@@ -199,8 +199,10 @@ int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *me
 
 int setup_raw_socket(){
     int so = 0;
+    short unsigned int protocol = 0xFFFF;
+    short unsigned int mip_protocol = 0x88B5;
 
-    so = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_MIP));
+    so = socket(AF_PACKET, SOCK_RAW, htons(protocol));
     check(so != -1, "Failed to create raw socket");
     return so;
 
