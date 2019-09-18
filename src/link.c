@@ -125,7 +125,7 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
      so_name->sll_addr[5]);
     debug("sll_ifindex: %d", so_name->sll_ifindex);
 
-    so_name->sll_protocol = ETH_P_MIP;
+    so_name->sll_family = ETH_P_MIP;
     log_info("SENDING WITH PROTOCOL: %hu", ETH_P_MIP);
 
       /* Fill out message metadata struct */
@@ -204,7 +204,7 @@ int setup_raw_socket(){
     short unsigned int protocol = 0xFFFF;
     short unsigned int mip_protocol = 0x88B5;
 
-    so = socket(AF_PACKET, SOCK_RAW, htons(mip_protocol));
+    so = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_MIP));
     check(so != -1, "Failed to create raw socket");
     return so;
 
