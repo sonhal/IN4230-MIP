@@ -53,39 +53,6 @@ char *macaddr_str(struct sockaddr_ll *sa){
 }
 
 
-void print_interface_list(){
-    int rc;
-    //struct sockaddr_ll so_name;
-    struct ifaddrs *ifaces, *ifp;
-
-    rc = getifaddrs(&ifaces);
-    check(rc != -1, "Failed to get ip address");
-
-    // Walk the list looking for the ifaces interesting to us
-    printf("Interface list:\n");
-    for(ifp = ifaces; ifp != NULL; ifp = ifp->ifa_next){
-        if(ifp->ifa_addr != NULL && ifp->ifa_addr->sa_family == AF_PACKET){
-            // Copy the address info into out temp variable
-           // memcmp(&so_name, (struct sockaddr_ll*)ifp->ifa_addr, sizeof(struct sockaddr_ll));
-            struct sockaddr_ll *so_fake = (struct sockaddr_ll*)ifp->ifa_addr;
-            char *addr_str = macaddr_str(so_fake);
-
-            printf("%s\t%s\n",
-                    ifp->ifa_name != NULL ? ifp->ifa_name : "null", addr_str);
-            
-            free(addr_str);
-        }
-    }
-    /*  After the loop the address info of the last interface
-        enumerated is stored in so_name
-    */
-   free(ifaces);
-   return;
-
-   error:
-        log_warn("Failed to print MAC addresses");
-        return;
-}
 
 int last_inteface(struct sockaddr_ll *so_name){
     int rc = 0;
@@ -165,7 +132,7 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     msg->msg_iovlen = 2;
     msg->msg_iov = msgvec;
 
-    rc = sendmsg(sd, msg, ETH_P_MIP);
+    rc = sendmsg(sd, msg, 0);
     check(rc != -1, "Failed to send message");
 
     return 0;

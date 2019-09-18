@@ -6,7 +6,9 @@
 #include "../src/link.c"
 
 char *test_print_interface_list(){
-    print_interface_list();
+    struct sockaddr_ll *so_name = calloc(1, sizeof(struct sockaddr_ll));
+    last_inteface(so_name);
+    free(so_name);
     return NULL;
 }
 
