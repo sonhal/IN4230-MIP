@@ -113,12 +113,12 @@ int last_inteface(struct sockaddr_ll *so_name){
 
 int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int message_length){
     int rc = 0;
-    struct msghdr *msg;
+    struct msghdr msg = {};
     struct mip_header frame_hdr;
     struct iovec msgvec[2];
     
 
-    msg = (struct msghdr *)calloc(1, sizeof(struct msghdr));
+    //msg = (struct msghdr *)calloc(1, sizeof(struct msghdr));
 
     /* Hardcode silly message */
     uint8_t buf[] = {0xde, 0xad, 0xbe, 0xef};
@@ -137,7 +137,7 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     msgvec[1].iov_len = message_length;
 
       /* Fill out message metadata struct */
-    memcpy(so_name->sll_addr, broad_addr, 8);
+    //memcpy(so_name->sll_addr, broad_addr, 8);
 
     debug("Broadcast address: %d %d %d %d %d %d %d",
      so_name->sll_addr[0],
@@ -149,13 +149,13 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
      so_name->sll_addr[6],
      so_name->sll_addr[7]);
 
-    msg->msg_name = &so_name;
-    msg->msg_namelen = sizeof(struct sockaddr_ll);
+    msg.msg_name = &so_name;
+    msg.msg_namelen = sizeof(struct sockaddr_ll);
 
-    msg->msg_iovlen = 2;
-    msg->msg_iov = msgvec;
+    msg.msg_iovlen = 2;
+    msg.msg_iov = msgvec;
 
-    rc = sendmsg(sd, msg, 0);
+    rc = sendmsg(sd, &msg, 0);
     check(rc != -1, "Failed to send message");
 
     return 0;
