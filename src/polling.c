@@ -133,7 +133,7 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
                 rc = last_inteface(so_name);
                 check(rc != -1, "Failed to collect interface for raw socket message");
 
-                rc = send_ether_frame_on_raw_socket(raw_socket, so_name, read_buffer, bytes_read);
+                rc = send_raw_packet(raw_socket, so_name, read_buffer, bytes_read);
                 check(rc != -1, "Failed to send domain socket message to raw socket");
             }
 
