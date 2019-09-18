@@ -122,13 +122,14 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
 
     /* Hardcode silly message */
     uint8_t buf[] = {0xde, 0xad, 0xbe, 0xef};
-    uint8_t broad_addr[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+    uint8_t broad_addr[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
     
 
     /* Fill ethernet header */
     uint8_t broadcast_addr = ETH_BROADCAST_ADDR;
     frame_hdr.dst_addr = broadcast_addr;
     frame_hdr.src_addr = 0xff;
+    
 
     msgvec[0].iov_base = &frame_hdr;
     msgvec[0].iov_len = sizeof(struct mip_header);
@@ -136,7 +137,18 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     msgvec[1].iov_len = message_length;
 
       /* Fill out message metadata struct */
-    memcpy(so_name->sll_addr, broad_addr, 6);
+    memcpy(so_name->sll_addr, broad_addr, 8);
+
+    debug("Broadcast address: %d %d %d %d %d %d %d",
+     so_name->sll_addr[0],
+     so_name->sll_addr[1],
+     so_name->sll_addr[2],
+     so_name->sll_addr[3],
+     so_name->sll_addr[4],
+     so_name->sll_addr[5],
+     so_name->sll_addr[6],
+     so_name->sll_addr[7]);
+
     msg->msg_name = &so_name;
     msg->msg_namelen = sizeof(struct sockaddr_ll);
 
