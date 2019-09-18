@@ -160,8 +160,11 @@ int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *me
     uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
     memcpy(frame_hdr.dst_addr, broadcast_addr, 6);
     memcpy(frame_hdr.src_addr, so_name->sll_addr, 6);
-    /* Match the ethertype in packet_socket.c: */
-    frame_hdr.eth_proto[0] = frame_hdr.eth_proto[1] = 0xFFFF;
+    /* Match the ethertype in packet_so9cket.c: */
+    frame_hdr.eth_proto[0] = 0x88;
+    frame_hdr.eth_proto[1] = 0xB5;
+
+    log_info("SENDING WITH PROTOCOL: %hhx%hhx", frame_hdr.eth_proto[0], frame_hdr.eth_proto[1]);
 
     /* Point to frame header */
     msgvec[0].iov_base = &frame_hdr;
@@ -194,7 +197,6 @@ int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *me
      printf("Sent %d bytes on if with index: %d\n",
 	 rc, so_name->sll_ifindex);
 
-    
     free(msg);
     return 0;
 }
