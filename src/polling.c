@@ -80,12 +80,11 @@ void handle_raw_socket_frame(struct epoll_event *event, char *read_buffer, int r
     rc = receive_raw_packet(event->data.fd, read_buffer, read_buffer_size);
     check(rc != -1, "Failed to receive from raw socket");
     printf("%d bytes read\nRAW SOCKET Frame:\n", rc);
-    printf("From RAW socket: %s", read_buffer);
+    printf("From RAW socket: %s\n", read_buffer);
 
     error:
         return;
 }
-
 
 
 int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epoll_event *events, int event_num, int read_buffer_size, int timeout){
@@ -103,7 +102,7 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
         int i = 0;
         for(i = 0; i < event_count; i++){
             printf("Reading file descriptor [%d] -- ", events[i].data.fd);
-            bytes_read = read(events[i].data.fd, read_buffer, read_buffer_size);
+            
 
             // Event on the listening local domain socket, should only be for new connections
             if(events[i].data.fd == local_domain_socket){
@@ -117,6 +116,8 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
                 handle_raw_socket_frame(&events[i], read_buffer, read_buffer_size);
                 continue;
             }
+
+            bytes_read = read(events[i].data.fd, read_buffer, read_buffer_size);
 
             // If the event is not a domain or raw socket and the bytes read is null.
             // The event is a domain socket client. And if the bytes read are 0 the client has disconnected
@@ -138,13 +139,13 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
                 check(rc != -1, "Failed to send domain socket message to raw socket");
             }
 
-            memset(read_buffer, '\0', read_buffer_size);
-            //read_buffer[bytes_read] = '\0';
-
             if(!strncmp(read_buffer, "stop\n", 5)){
                 running = 0;
                 log_info("Exiting...");
             }
+
+            memset(read_buffer, '\0', read_buffer_size);
+            //read_buffer[bytes_read] = '\0';
         }
     }
     return 0;
