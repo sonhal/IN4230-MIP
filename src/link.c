@@ -202,7 +202,7 @@ int setup_raw_socket(){
     short unsigned int protocol = 0xFFFF;
     short unsigned int mip_protocol = 0x88B5;
 
-    so = socket(AF_PACKET, SOCK_RAW, htons(protocol));
+    so = socket(AF_PACKET, SOCK_RAW, htons(mip_protocol));
     check(so != -1, "Failed to create raw socket");
     return so;
 
