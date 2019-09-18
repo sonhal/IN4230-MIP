@@ -125,8 +125,10 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
      so_name->sll_addr[5]);
     debug("sll_ifindex: %d", so_name->sll_ifindex);
 
-    so_name->sll_family = ETH_P_MIP;
-    log_info("SENDING WITH PROTOCOL: %hu", ETH_P_MIP);
+    log_info("sll_hatype before: %hu", so_name->sll_hatype);
+    so_name->sll_hatype = ETH_P_MIP;
+    so_name->sll_halen = sizeof(ETH_P_MIP);
+    log_info("SENDING WITH PROTOCOL: %hu", so_name->sll_hatype);
 
       /* Fill out message metadata struct */
     memcpy(so_name->sll_addr, broad_addr, 6);
