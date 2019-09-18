@@ -9,8 +9,7 @@
 #include "dbg.h"
 
 #define BUF_SIZE 1600
-#define ETH_BROADCAST_ADDR 0xff
-#define SOME_ETH_BROADCAST_ADDR {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+#define ETH_BROADCAST_ADDR {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 #define PROTOCOL_TYPE 0xff
 #define ETH_P_MIP 0x88B5
 
@@ -104,7 +103,7 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     
 
     /* Fill ethernet header */
-    uint8_t broadcast_addr = ETH_BROADCAST_ADDR;
+    uint8_t broadcast_addr = 0xff;
     frame_hdr.dst_addr = broadcast_addr;
     frame_hdr.src_addr = 0xff;
 
@@ -125,10 +124,9 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
      so_name->sll_addr[5]);
     debug("sll_ifindex: %d", so_name->sll_ifindex);
 
-    log_info("sll_hatype before: %hu", so_name->sll_hatype);
-    so_name->sll_hatype = ETH_P_MIP;
-    so_name->sll_halen = sizeof(ETH_P_MIP);
-    log_info("SENDING WITH PROTOCOL: %hu", so_name->sll_hatype);
+    log_info("sll_protocol before: %hu", so_name->sll_protocol);
+    so_name->sll_protocol = htons(ETH_P_MIP);
+    log_info("SENDING WITH PROTOCOL: %hu", so_name->sll_protocol);
 
       /* Fill out message metadata struct */
     memcpy(so_name->sll_addr, broad_addr, 6);
@@ -159,7 +157,7 @@ int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *me
     uint8_t buf[] = {0xde, 0xad, 0xbe, 0xef};
 
     /* Fill in Ethernet header */
-    uint8_t broadcast_addr[] = SOME_ETH_BROADCAST_ADDR;
+    uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
     memcpy(frame_hdr.dst_addr, broadcast_addr, 6);
     memcpy(frame_hdr.src_addr, so_name->sll_addr, 6);
     /* Match the ethertype in packet_socket.c: */
