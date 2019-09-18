@@ -127,7 +127,9 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
             else {
                 printf("%zd bytes read\nDomain socket read:\n", bytes_read);
                 printf("%s", read_buffer);
-                struct sockaddr_ll *so_name = calloc(1, sizeof(struct sockaddr_ll));
+                struct sockaddr_ll *so_name = malloc(sizeof(struct sockaddr_ll));
+                memset(so_name, 0, sizeof(struct sockaddr_ll));
+                
                 rc = last_inteface(so_name);
                 check(rc != -1, "Failed to collect interface for raw socket message");
 

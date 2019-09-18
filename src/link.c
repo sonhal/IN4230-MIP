@@ -116,11 +116,13 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     struct msghdr *msg;
     struct mip_header frame_hdr;
     struct iovec msgvec[2];
+    
 
     msg = (struct msghdr *)calloc(1, sizeof(struct msghdr));
 
     /* Hardcode silly message */
     uint8_t buf[] = {0xde, 0xad, 0xbe, 0xef};
+    uint8_t broad_addr[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
     
 
     /* Fill ethernet header */
@@ -134,7 +136,7 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     msgvec[1].iov_len = message_length;
 
       /* Fill out message metadata struct */
-    memcpy(so_name->sll_addr, broadcast_addr, 1);
+    memcpy(so_name->sll_addr, broad_addr, 6);
     msg->msg_name = &so_name;
     msg->msg_namelen = sizeof(struct sockaddr_ll);
 
