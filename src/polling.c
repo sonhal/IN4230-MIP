@@ -76,11 +76,11 @@ void handle_domain_socket_disconnect(struct epoll_event *event){
 
 void handle_raw_socket_frame(struct epoll_event *event, char *read_buffer, int read_buffer_size){
     int rc = 0;
-
-    rc = recv(event->data.fd, read_buffer, read_buffer_size, 0);
+    
+    rc = receive_raw_packet(event->data.fd, read_buffer, read_buffer_size);
     check(rc != -1, "Failed to receive from raw socket");
     printf("%d bytes read\nRAW SOCKET Frame:\n", rc);
-    DumpHex(read_buffer, rc);
+    printf("From RAW socket: %s", read_buffer);
 
     error:
         return;
@@ -134,7 +134,7 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
                 rc = last_inteface(so_name);
                 check(rc != -1, "Failed to collect interface for raw socket message");
 
-                rc = send_ether_frame_on_raw_socket(raw_socket, so_name, read_buffer, bytes_read);
+                rc = send_raw_package(raw_socket, so_name, read_buffer, bytes_read);
                 check(rc != -1, "Failed to send domain socket message to raw socket");
             }
 

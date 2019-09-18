@@ -3,8 +3,8 @@
 
 int last_inteface(struct sockaddr_ll *so_name);
 
-int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int message_length);
+int receive_raw_packet(int sd, char *buf, size_t len);
 
-int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *message, int message_length);
+int send_raw_package(int sd, struct sockaddr_ll *so_name, char *message, int message_length);
 
 int setup_raw_socket();

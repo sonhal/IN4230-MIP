@@ -86,66 +86,44 @@ int last_inteface(struct sockaddr_ll *so_name){
 }
 
 
-int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int message_length){
-    int rc = 0;
-    struct msghdr *msg;
-    struct mip_header frame_hdr = {};
-    struct iovec msgvec[2];
-    uint8_t broad_addr[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+int receive_raw_packet(int sd, char *buf, size_t len)
+{
+    struct sockaddr_ll  so_name;
+    struct ether_frame  frame_hdr;
+    struct msghdr       msg;
+    struct iovec        msgvec[2];
+    int 			    rc = 0;
 
-    
-        /* Hardcode silly message */
-    uint8_t buf[] = {0xde, 0xad, 0xbe, 0xef};
-
-    msg = (struct msghdr *)calloc(1, sizeof(struct msghdr));
-
-
-    
-
-    /* Fill ethernet header */
-    uint8_t broadcast_addr = 0xff;
-    frame_hdr.dst_addr = broadcast_addr;
-    frame_hdr.src_addr = 0xff;
-
+    /* Point to frame header */
     msgvec[0].iov_base = &frame_hdr;
-    msgvec[0].iov_len = sizeof(struct mip_header);
+    msgvec[0].iov_len  = sizeof(struct ether_frame);
+    /* Point to frame payload */
     msgvec[1].iov_base = buf;
-    msgvec[1].iov_len = 4;
+    msgvec[1].iov_len  = len;
 
+    /* Fill out message metadata struct */
+    //memcpy(so_name->sll_addr, dst_addr, 6);
+    msg.msg_name    = &so_name;
+    msg.msg_namelen = sizeof(struct sockaddr_ll);
+    msg.msg_iovlen  = 2;
+    msg.msg_iov     = msgvec;
 
-    //so_name->sll_ifindex = 3;
-    // Debug stuff
-    debug("Broadcast address: %hhx %hhx %hhx %hhx %hhx %hhx",
-     so_name->sll_addr[0],
-     so_name->sll_addr[1],
-     so_name->sll_addr[2],
-     so_name->sll_addr[3],
-     so_name->sll_addr[4],
-     so_name->sll_addr[5]);
-    debug("sll_ifindex: %d", so_name->sll_ifindex);
+    rc = recvmsg(sd, &msg, 0);
+    check(rc != -1, "Failed to receive message from raw socket");
 
-    log_info("sll_protocol before: %hu", so_name->sll_protocol);
-    so_name->sll_protocol = htons(ETH_P_MIP);
-    log_info("SENDING WITH PROTOCOL: %hu", so_name->sll_protocol);
-
-      /* Fill out message metadata struct */
-    memcpy(so_name->sll_addr, broad_addr, 6);
-    msg->msg_name = so_name;
-    msg->msg_namelen = sizeof(struct sockaddr_ll);
-    msg->msg_iovlen = 2;
-    msg->msg_iov = msgvec;
-
-    rc = sendmsg(sd, msg, 0);
-    check(rc != -1, "Failed to send message");
-
-    return 0;
+    /*
+    * Copy the src_addr of the current frame to the global dst_addr
+    * We need that address as a dst_addr for the next frames we're going to send from the server
+    *  memcpy(dst_addr,frame_hdr.src_addr, 6);
+    */
+    return rc;
 
     error:
         return -1;
 }
 
 
-int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *message, int message_length){
+int send_raw_package(int sd, struct sockaddr_ll *so_name, char *message, int message_length){
     int so = sd;
     int rc = 0;
     struct msghdr *msg;
@@ -163,6 +141,7 @@ int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *me
     /* Match the ethertype in packet_so9cket.c: */
     frame_hdr.eth_proto[0] = 0x88;
     frame_hdr.eth_proto[1] = 0xB5;
+
 
     log_info("SENDING WITH PROTOCOL: %hhx%hhx", frame_hdr.eth_proto[0], frame_hdr.eth_proto[1]);
 
@@ -203,8 +182,6 @@ int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *me
 
 int setup_raw_socket(){
     int so = 0;
-    short unsigned int protocol = 0xFFFF;
-    short unsigned int mip_protocol = 0x88B5;
 
     so = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_MIP));
     check(so != -1, "Failed to create raw socket");
