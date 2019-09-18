@@ -101,6 +101,7 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
         log_info("%d ready events", event_count);
         int i = 0;
         for(i = 0; i < event_count; i++){
+            memset(read_buffer, '\0', read_buffer_size);
             printf("Reading file descriptor [%d] -- ", events[i].data.fd);
             
 
@@ -143,9 +144,6 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
                 running = 0;
                 log_info("Exiting...");
             }
-
-            memset(read_buffer, '\0', read_buffer_size);
-            //read_buffer[bytes_read] = '\0';
         }
     }
     return 0;
