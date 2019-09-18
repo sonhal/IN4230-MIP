@@ -3,13 +3,14 @@
 #include <sys/un.h>		/* struct sockaddr_un */
 #include <unistd.h>
 #include <sys/epoll.h> 
-#include "dbg.h"
-#include "polling.h"
-#include "app_connection.h"
 #include <string.h>
 #include <sys/socket.h>		/* socket, bind, listen, accept */
 #include <stdlib.h> 		/* malloc */
 
+#include "polling.h"
+#include "app_connection.h"
+#include "link.h"
+#include "dbg.h"
 
 #define MAX_READ 1600
 #define MAX_EVENTS 5

@@ -65,16 +65,7 @@ int setup_domain_socket(struct sockaddr_un *so_name, char *socket_name, unsigned
 }
 
 
-int setup_raw_socket(){
-    int so = 0;
 
-    so = socket(AF_PACKET, SOCK_RAW, htons(0xFF));
-    check(so != -1, "Failed to create raw socket");
-    return so;
-
-    error:
-        return -1;
-}
 
 
 int app_server(int so, char *socket_name, unsigned int socket_name_size){
