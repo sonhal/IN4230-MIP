@@ -70,7 +70,7 @@ void handle_domain_socket_connection(int epoll_fd, struct epoll_event *event){
 }
 
 void handle_domain_socket_disconnect(struct epoll_event *event){
-    printf("Clinent on socket: %d disconnected", event->data.fd);
+    printf("Client on socket: %d disconnected", event->data.fd);
     close(event->data.fd);
 }
 
@@ -113,6 +113,7 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
 
             // Raw socket event
             else if(events[i].data.fd == raw_socket){
+                log_info("RAW SOCKET ACTION");
                 handle_raw_socket_frame(&events[i], read_buffer, read_buffer_size);
                 continue;
             }
