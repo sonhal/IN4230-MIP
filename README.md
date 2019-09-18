@@ -4,4 +4,5 @@
 ### Plan
 create mipd - a MIP daemon for handling network requests
 
-1. mipd starts up with a UNIX socket address clients can connect to
+1. mipd starts up with a UNIX socket address clients can connect to - done
+2 MIP-ARP
