@@ -149,8 +149,8 @@ int send_raw_package(int sd, struct sockaddr_ll *so_name, char *message, int mes
     msgvec[0].iov_base = &frame_hdr;
     msgvec[0].iov_len = sizeof(struct ether_frame);
     /* Point to frame payload */
-    msgvec[1].iov_base = buf;
-    msgvec[1].iov_len = 4;
+    msgvec[1].iov_base = message;
+    msgvec[1].iov_len = message_length;
 
     /* Allocate a zeroed-out message info struct */
     msg = calloc(1, sizeof(struct msghdr));
