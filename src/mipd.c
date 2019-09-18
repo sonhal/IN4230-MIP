@@ -19,17 +19,20 @@ void startup();
 int setup_epoll(struct epoll_event events_to_handle[], int event_num);
 
 int main(int argc, char *argv[]){
+    char *socket_name = argv[1];
+    int local_socket = 0;
+    int raw_socket = 0;
+    int rc = 0;
+    int epoll_fd = 0;
+    struct sockaddr_un so_name;
+    
     check(argc > 1, "mipd [-h] [-d] <socket_application> [MIP addresses ...]");
     startup();
 
     //int rc = handle_poll();
     //check(rc != -1, "epolling exited unexpectedly");
 
-    char *socket_name = argv[1];
-    int local_socket = 0;
-    int raw_socket = 0;
-    int rc = 0;
-    struct sockaddr_un so_name;
+
     
     local_socket = setup_domain_socket(&so_name, socket_name, strnlen(socket_name, 256));
     check(local_socket != -1, "Failed to create local socket");
@@ -41,9 +44,8 @@ int main(int argc, char *argv[]){
     struct epoll_event raw_socket_event = create_epoll_in_event(raw_socket);
     struct epoll_event events_to_handle[] = {stdin_event, local_domain_event, raw_socket_event};
 
-
-    int epoll_fd = 0;
-    epoll_fd = setup_epoll(&events_to_handle, 3);
+    
+    epoll_fd = setup_epoll(events_to_handle, 3);
 
 
     // MAIN application loop
@@ -55,13 +57,15 @@ int main(int argc, char *argv[]){
     rc = close(epoll_fd);
     check(rc != -1, "Failed to close epoll file descriptor");
     unlink(so_name.sun_path);
-    close(socket);
+    close(local_socket);
+    close(raw_socket);
     return 0;
 
     error:
         if(epoll_fd) close(epoll_fd);
         unlink(so_name.sun_path);
-        close(socket);
+        close(local_socket);
+        close(raw_socket);
         return -1;
 }
 

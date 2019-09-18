@@ -16,11 +16,11 @@
 extern void DumpHex(const void* data, size_t size);
 
 struct mip_header {
-    unsigned int t : 1;
-    unsigned int r : 1;
-    unsigned int a : 1;
-    unsigned int ttl: 4;
-    unsigned int payload_len: 9;
+    unsigned int t;
+    unsigned int r;
+    unsigned int a;
+    unsigned int ttl;
+    unsigned int payload_len;
     uint8_t dst_addr;
     uint8_t src_addr;
 } __attribute__((packed));
@@ -87,7 +87,7 @@ void print_interface_list(){
 }
 
 int last_inteface(struct sockaddr_ll *so_name){
-    int rc;
+    int rc = 0;
     struct ifaddrs *ifaces, *ifp;
 
     rc = getifaddrs(&ifaces);
@@ -122,7 +122,7 @@ int last_inteface(struct sockaddr_ll *so_name){
 int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int message_length){
     int rc = 0;
     struct msghdr *msg;
-    struct mip_header frame_hdr;
+    struct mip_header frame_hdr = {};
     struct iovec msgvec[2];
     
 
@@ -137,7 +137,6 @@ int  send_raw_packet(int sd, struct sockaddr_ll *so_name, char *message, int mes
     uint8_t broadcast_addr = ETH_BROADCAST_ADDR;
     frame_hdr.dst_addr = broadcast_addr;
     frame_hdr.src_addr = 0xff;
-    
 
     msgvec[0].iov_base = &frame_hdr;
     msgvec[0].iov_len = sizeof(struct mip_header);
@@ -205,10 +204,13 @@ int send_ether_frame_on_raw_socket(int sd, struct sockaddr_ll *so_name, char *me
 
     /* Fill out message metadata struct */
     memcpy(so_name->sll_addr, broadcast_addr, 6);
-    msg->msg_name = &so_name;
+    msg->msg_name = so_name;
     msg->msg_namelen = sizeof(struct sockaddr_ll);
     msg->msg_iovlen = 2;
     msg->msg_iov = msgvec;
+
+    printf("Sending %d bytes on if with index: %d\n",
+	 rc, so_name->sll_ifindex);
 
     /* Construct and send message */
     rc = sendmsg(so, msg, 0);

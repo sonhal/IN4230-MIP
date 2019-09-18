@@ -69,17 +69,17 @@ void handle_domain_socket_connection(int epoll_fd, struct epoll_event *event){
         return;
 }
 
-void handle_domain_socket_disconnect(int epoll_fd, struct epoll_event *event){
+void handle_domain_socket_disconnect(struct epoll_event *event){
     printf("Clinent on socket: %d disconnected", event->data.fd);
     close(event->data.fd);
 }
 
-void handle_raw_socket_frame(int epoll_fd, struct epoll_event *event, char *read_buffer, int read_buffer_size){
+void handle_raw_socket_frame(struct epoll_event *event, char *read_buffer, int read_buffer_size){
     int rc = 0;
 
     rc = recv(event->data.fd, read_buffer, read_buffer_size, 0);
     check(rc != -1, "Failed to receive from raw socket");
-    printf("%zd bytes read\nRAW SOCKET Frame:\n", rc);
+    printf("%d bytes read\nRAW SOCKET Frame:\n", rc);
     DumpHex(read_buffer, rc);
 
     error:
@@ -113,7 +113,7 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
 
             // Raw socket event
             else if(events[i].data.fd == raw_socket){
-                handle_raw_socket_frame(epoll_fd, &events[i], read_buffer, read_buffer_size);
+                handle_raw_socket_frame(&events[i], read_buffer, read_buffer_size);
                 continue;
             }
 
@@ -121,7 +121,7 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
             // The event is a domain socket client. And if the bytes read are 0 the client has disconnected
             if(bytes_read == 0){
                 printf("%zd bytes read\n", bytes_read);
-                handle_domain_socket_disconnect(epoll_fd, &events[i]);
+                handle_domain_socket_disconnect(&events[i]);
                 continue;
             }
             else {
@@ -133,7 +133,7 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
                 rc = last_inteface(so_name);
                 check(rc != -1, "Failed to collect interface for raw socket message");
 
-                rc = send_ether_frame_on_raw_socket(raw_socket, so_name, &read_buffer, bytes_read);
+                rc = send_raw_packet(raw_socket, so_name, read_buffer, bytes_read);
                 check(rc != -1, "Failed to send domain socket message to raw socket");
             }
 
