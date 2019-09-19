@@ -7,8 +7,11 @@
 #include <arpa/inet.h>		/* htons */
 #include <ifaddrs.h>		/* getifaddrs */
 
+#include "interface.h"
 #include "dbg.h"
 #include "mip.h"
+#include "link.h"
+
 
 #define BUF_SIZE 1600
 #define ETH_BROADCAST_ADDR {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
@@ -16,31 +19,6 @@
 #define ETH_P_MIP 0x88B5
 
 extern void DumpHex(const void* data, size_t size);
-
-struct ether_frame {
-    uint8_t dst_addr[6];
-    uint8_t src_addr[6];
-    uint8_t eth_proto[2];
-    uint8_t contents[0];
-} __attribute__((packed));
-
-
-char *macaddr_str(struct sockaddr_ll *sa){
-    char *macaddr = calloc(6 * 2 + 6, sizeof(char));
-    
-    int i = 0;
-    for (i = 0; i < 6; i++){
-        char *buf = strdup(macaddr);
-
-        sprintf(macaddr, "%s%02hhx%s",
-                buf,
-                sa->sll_addr[i],
-                (i < 5) ? ":" : "");
-
-        free(buf);
-    }
-    return macaddr;
-}
 
 
 int last_inteface(struct sockaddr_ll *so_name){
@@ -73,38 +51,6 @@ int last_inteface(struct sockaddr_ll *so_name){
 
    error:
         return -1;
-}
-
-int collect_intefaces(struct sockaddr_ll *so_name, int buffer_n){
-    int rc = 0;
-    int i = 0;
-    struct ifaddrs *ifaces, *ifp;
-    struct sockaddr_ll *tmp;
-
-    rc = getifaddrs(&ifaces);
-    check(rc != -1, "Failed to get ip addresses");
-
-    // Walk the list looking for the ifaces interesting to us
-    for(ifp = ifaces; ifp != NULL; ifp = ifp->ifa_next){
-        if(ifp->ifa_addr != NULL && ifp->ifa_addr->sa_family == AF_PACKET){
-           tmp = (struct sockaddr_ll*)ifp->ifa_addr;
-           /* Remove loopback interface so we dont message ourselves */
-           if(tmp->sll_ifindex == 1) {
-               continue;
-           }
-
-            // Copy the address info into out variable
-           memcpy(&so_name[i], (struct sockaddr_ll*)ifp->ifa_addr, sizeof(struct sockaddr_ll));
-           i += 1;
-           check(i < buffer_n, "Buffer size surpassed in interface collection");
-        }
-    }
-    
-    free(ifaces);
-    return i+1; // number of collected interfaces
- 
-    error:
-         return -1;
 }
 
 
@@ -144,16 +90,15 @@ int receive_raw_packet(int sd, char *buf, size_t len)
         return -1;
 }
 
-int receive_raw_mip_packet(int sd, struct mip_header *header){
+int receive_raw_mip_packet(int sd, struct ether_frame  *frame_hdr, struct mip_header *header){
     struct sockaddr_ll  so_name;
-    struct ether_frame  frame_hdr;
     struct msghdr       msg;
     struct iovec        msgvec[2];
     int 			    rc = 0;
     char                *src_mac;
 
     /* Point to frame header */
-    msgvec[0].iov_base = &frame_hdr;
+    msgvec[0].iov_base = frame_hdr;
     msgvec[0].iov_len  = sizeof(struct ether_frame);
     /* Point to frame payload */
     msgvec[1].iov_base = header;
@@ -243,12 +188,11 @@ int send_raw_package(int sd, struct sockaddr_ll *so_name, char *message, int mes
     return 0;
 }
 
-int send_raw_package_mip(int sd, struct sockaddr_ll *so_name, struct mip_header *mip_header){
+int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame *frame_hdr, struct mip_header *mip_header){
     int so = sd;
     int rc = 0;
     struct msghdr *msg;
     struct iovec msgvec[2];
-    struct ether_frame frame_hdr;
 
 
     /* Hardcode silly message */
@@ -256,17 +200,17 @@ int send_raw_package_mip(int sd, struct sockaddr_ll *so_name, struct mip_header 
 
     /* Fill in Ethernet header */
     uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
-    memcpy(frame_hdr.dst_addr, broadcast_addr, 6);
-    memcpy(frame_hdr.src_addr, so_name->sll_addr, 6);
+    memcpy(frame_hdr->dst_addr, broadcast_addr, 6);
+    memcpy(frame_hdr->src_addr, so_name->sll_addr, 6);
     /* Match the ethertype in packet_so9cket.c: */
-    frame_hdr.eth_proto[0] = 0x88;
-    frame_hdr.eth_proto[1] = 0xB5;
+    frame_hdr->eth_proto[0] = 0x88;
+    frame_hdr->eth_proto[1] = 0xB5;
 
 
-    log_info("SENDING WITH PROTOCOL: %hhx%hhx", frame_hdr.eth_proto[0], frame_hdr.eth_proto[1]);
+    log_info("SENDING WITH PROTOCOL: %hhx%hhx", frame_hdr->eth_proto[0], frame_hdr->eth_proto[1]);
 
     /* Point to frame header */
-    msgvec[0].iov_base = &frame_hdr;
+    msgvec[0].iov_base = frame_hdr;
     msgvec[0].iov_len = sizeof(struct ether_frame);
     /* Point to frame payload */
     msgvec[1].iov_base = mip_header;
@@ -319,7 +263,7 @@ int complete_mip_arp(struct sockaddr_ll *so_name, int num_interfaces, int raw_so
     request = create_arp_request_package(mip_address);
 
     for (i = 0; i < num_interfaces; i++){
-        rc = send_raw_package_mip(raw_socket_fd, &so_name[i], request);
+        rc = send_raw_mip_packet(raw_socket_fd, &so_name[i],NULL, request);
         check(rc != -1, "Failed to send arp package for interface");
     }
 
@@ -327,3 +271,12 @@ int complete_mip_arp(struct sockaddr_ll *so_name, int num_interfaces, int raw_so
         return -1;;
 
 }
+
+struct ether_frame *create_response_ethernet_frame(struct ether_frame *request_ethernet){
+    struct ether_frame *response = calloc(1, sizeof(struct ether_frame));
+    memcpy(response, request_ethernet, sizeof(struct ether_frame));
+    memcpy(response->dst_addr, request_ethernet->src_addr, sizeof( uint8_t) * 6);
+    memcpy(response->src_addr, request_ethernet->dst_addr, sizeof( uint8_t) * 6);
+    return response;
+}
+
