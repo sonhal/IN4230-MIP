@@ -9,6 +9,7 @@
 #include "dbg.h"
 #include "link.h"
 #include "mip_arp.h"
+#include "mip.h"
 
 #define INTERFACE_BUF_SIZE 10;
 
@@ -79,8 +80,8 @@ void handle_domain_socket_disconnect(struct epoll_event *event){
 
 void handle_raw_socket_frame(struct epoll_event *event, char *read_buffer, int read_buffer_size){
     int rc = 0;
-    
-    rc = receive_raw_packet(event->data.fd, read_buffer, read_buffer_size);
+    struct mip_header received_header;
+    rc = receive_raw_mip_packet(event->data.fd, &received_header);
     check(rc != -1, "Failed to receive from raw socket");
     printf("%d bytes read\nRAW SOCKET Frame:\n", rc);
     printf("From RAW socket: %s\n", read_buffer);

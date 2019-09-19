@@ -79,6 +79,7 @@ int collect_intefaces(struct sockaddr_ll *so_name, int buffer_n){
     int rc = 0;
     int i = 0;
     struct ifaddrs *ifaces, *ifp;
+    struct sockaddr_ll *tmp;
 
     rc = getifaddrs(&ifaces);
     check(rc != -1, "Failed to get ip addresses");
@@ -86,6 +87,11 @@ int collect_intefaces(struct sockaddr_ll *so_name, int buffer_n){
     // Walk the list looking for the ifaces interesting to us
     for(ifp = ifaces; ifp != NULL; ifp = ifp->ifa_next){
         if(ifp->ifa_addr != NULL && ifp->ifa_addr->sa_family == AF_PACKET){
+           tmp = (struct sockaddr_ll*)ifp->ifa_addr;
+           /* Remove loopback interface so we dont message ourselves */
+           if(tmp->sll_ifindex == 1) {
+               continue;
+           }
 
             // Copy the address info into out variable
            memcpy(&so_name[i], (struct sockaddr_ll*)ifp->ifa_addr, sizeof(struct sockaddr_ll));
@@ -93,14 +99,12 @@ int collect_intefaces(struct sockaddr_ll *so_name, int buffer_n){
            check(i < buffer_n, "Buffer size surpassed in interface collection");
         }
     }
-    /*  After the loop the address info of the last interface
-        enumerated is stored in so_name
-    */
-   free(ifaces);
-   return i+1; // number of collected interfaces
-
-   error:
-        return -1;
+    
+    free(ifaces);
+    return i+1; // number of collected interfaces
+ 
+    error:
+         return -1;
 }
 
 
@@ -137,6 +141,47 @@ int receive_raw_packet(int sd, char *buf, size_t len)
     return rc;
 
     error:
+        return -1;
+}
+
+int receive_raw_mip_packet(int sd, struct mip_header *header){
+    struct sockaddr_ll  so_name;
+    struct ether_frame  frame_hdr;
+    struct msghdr       msg;
+    struct iovec        msgvec[2];
+    int 			    rc = 0;
+    char                *src_mac;
+
+    /* Point to frame header */
+    msgvec[0].iov_base = &frame_hdr;
+    msgvec[0].iov_len  = sizeof(struct ether_frame);
+    /* Point to frame payload */
+    msgvec[1].iov_base = header;
+    msgvec[1].iov_len  = sizeof(struct mip_header);
+
+    /* Fill out message metadata struct */
+    //memcpy(so_name->sll_addr, dst_addr, 6);
+    msg.msg_name    = &so_name;
+    msg.msg_namelen = sizeof(struct sockaddr_ll);
+    msg.msg_iovlen  = 2;
+    msg.msg_iov     = msgvec;
+
+    rc = recvmsg(sd, &msg, 0);
+    check(rc != -1, "Failed to receive message from raw socket");
+    src_mac = macaddr_str(&so_name);
+
+    log_info("Received mip packet with tra %d\tmip address %d\tsrc mac %s", header->tra, header->src_addr, src_mac);
+
+    /*
+    * Copy the src_addr of the current frame to the global dst_addr
+    * We need that address as a dst_addr for the next frames we're going to send from the server
+    *  memcpy(dst_addr,frame_hdr.src_addr, 6);
+    */
+    free(src_mac);
+    return rc;
+
+    error:
+        free(src_mac);
         return -1;
 }
 

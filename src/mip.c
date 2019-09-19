@@ -3,14 +3,7 @@
 #include <string.h>		/* memset */
 #include <stdint.h>
 #include "dbg.h"
-
-struct mip_header {
-    unsigned int tra: 3;
-    unsigned int ttl: 4;
-    unsigned int payload_len: 9;
-    uint8_t dst_addr;
-    uint8_t src_addr;
-} __attribute__((packed));
+#include "mip.h"
 
 
 // Returns heap allocated MIP header ready for ARP
