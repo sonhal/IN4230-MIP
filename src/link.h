@@ -15,3 +15,6 @@ int send_raw_package(int sd, struct sockaddr_ll *so_name, char *message, int mes
 int send_raw_package_mip(int sd, struct sockaddr_ll *so_name, struct mip_header *mip_header);
 
 int setup_raw_socket();
+
+
+int complete_mip_arp(struct sockaddr_ll *so_name, int num_interfaces, int raw_socket_fd, uint8_t mip_address);

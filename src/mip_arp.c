@@ -53,20 +53,3 @@ void print_cache(struct mip_arp_cache *cache){
     }
     printf("-------------------\n");
 }
-
-
-int complete_mip_arp(struct sockaddr_ll *so_name, int num_interfaces, int raw_socket_fd, uint8_t mip_address){
-    int rc = 0;
-    int i = 0;
-    struct mip_header *request;
-    request = create_arp_request_package(mip_address);
-
-    for (i = 0; i < num_interfaces; i++){
-        rc = send_raw_package_mip(raw_socket_fd, &so_name[i], request);
-        check(rc != -1, "Failed to send arp package for interface");
-    }
-
-    error:
-        return -1;;
-
-}
