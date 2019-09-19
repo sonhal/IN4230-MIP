@@ -17,16 +17,29 @@
 extern void DumpHex(const void* data, size_t size);
 
 
-struct server_data {
+struct server_self {
     int raw_socket;
     int domain_socket;
     uint8_t mip_address;
-    struct interface_record interfaces[32];
+    struct interface_table *interfaces;
     struct mip_arp_cache *cache;
 };
 
-int destroy_server_data_self(struct server_data *self){
+void destroy_server_self(struct server_self *self){
     free(self->cache);
+    free(self->interfaces);
+    free(self);
+}
+
+struct server_self *init_server_self(int raw_socket, int domain_socket, uint8_t mip_address){
+    struct server_self *self;
+    self = calloc(1, sizeof(struct server_self));
+    self->raw_socket = raw_socket;
+    self->domain_socket = domain_socket;
+    self->mip_address = mip_address;
+    self->interfaces = create_loaded_interface_table();
+    self->cache = create_cache();
+    return self;
 }
 
 struct event_handler
@@ -93,22 +106,37 @@ void handle_domain_socket_disconnect(struct epoll_event *event){
 }
 
 // returns MIP header tra which descripes the type of package received
-int handle_raw_socket_frame(struct server_data self, struct epoll_event *event, char *read_buffer, int read_buffer_size){
+int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event, char *read_buffer, int read_buffer_size){
     int rc = 0;
     struct mip_header received_header;
     struct ether_frame e_frame;
+    struct ether_frame *e_frame_response;
+    struct mip_header *mip_header_response;
+    struct socketaddr_ll *sock_name;
+
     rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_header);
     check(rc != -1, "Failed to receive from raw socket");
     debug("%d bytes read\nRAW SOCKET Frame:\n", rc);
     debug("From RAW socket: %s\n", read_buffer);
     if(received_header.tra == 1){
-        struct ether_frame *e_frame_response = create_response_ethernet_frame(&e_frame);
-        struct mip_header *mip_header_response = create_arp_response_package(self.mip_address, &received_header);
-        //rc = send_raw_mip_packet(self.raw_socket, )
+        e_frame_response= create_response_ethernet_frame(&e_frame);
+        mip_header_response = create_arp_response_package(self->mip_address, &received_header);
+        sock_name = calloc(1, SOCKET_ADDR_SIZE);
+        rc = get_interface(self->interfaces, sock_name, e_frame.dst_addr);
+        check(rc != -1, "Failed to get interface to send return arp on");
+        rc = send_raw_mip_packet(self->raw_socket, sock_name, e_frame_response, mip_header_response);
+        check(rc != -1, "Failed to send arp response package");
     }
 
+    if(e_frame_response)free(e_frame_response);
+    if(mip_header_response)free(e_frame_response);
+    if(sock_name)free(e_frame_response);
+
     error:
-        return;
+        if(e_frame_response)free(e_frame_response);
+        if(mip_header_response)free(e_frame_response);
+        if(sock_name)free(e_frame_response);
+        return -1;
 }
 
 int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epoll_event *events, int event_num, int read_buffer_size, int timeout){
@@ -117,19 +145,10 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
     int event_count = 0;
     size_t bytes_read = 0;
     char read_buffer[read_buffer_size + 1];
-    struct server_data self;
-    self.raw_socket = raw_socket;
-    self.domain_socket = local_domain_socket;
-    self.mip_address = 128;
-    self.cache = create_cache();
+    struct server_self *self = init_server_self(raw_socket, local_domain_socket, 128);
 
-
-    // Get interfaces
-    int interface_n = 0;
-    struct sockaddr_ll *so_name = calloc(10, sizeof(struct sockaddr_ll));
-    interface_n = collect_intefaces(so_name, 10);
-    //On interfaces to MIP ARP
-    rc = complete_mip_arp(so_name, interface_n, raw_socket, 128);
+    rc = complete_mip_arp(raw_socket, self->interfaces, 128);
+    check(rc != -1, "Failed to complete mip arp");
 
     while(running){
         printf("Polling for input...\n");
@@ -184,10 +203,10 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
         }
     }
 
-    destroy_server_data_self(&self);
-    return 0;
+    destroy_server_self(self);
+    return 1;
 
     error:
-        destroy_server_data_self(&self);
+        destroy_server_self(self);
         return -1;
 }

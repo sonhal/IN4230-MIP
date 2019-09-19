@@ -23,6 +23,8 @@ int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame 
 
 int setup_raw_socket();
 
-int complete_mip_arp(struct sockaddr_ll *so_name, int num_interfaces, int raw_socket_fd, uint8_t mip_address);
+int complete_mip_arp(int raw_socket_fd, struct interface_table *interface_table, uint8_t mip_address);
 
 struct ether_frame *create_response_ethernet_frame(struct ether_frame *request_ethernet);
+
+struct ether_frame *create_ethernet_frame(int8_t *dest[], struct sockaddr_ll *so_name);

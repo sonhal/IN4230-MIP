@@ -194,19 +194,6 @@ int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame 
     struct msghdr *msg;
     struct iovec msgvec[2];
 
-
-    /* Hardcode silly message */
-    uint8_t buf[] = {0xde, 0xad, 0xbe, 0xef};
-
-    /* Fill in Ethernet header */
-    uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
-    memcpy(frame_hdr->dst_addr, broadcast_addr, 6);
-    memcpy(frame_hdr->src_addr, so_name->sll_addr, 6);
-    /* Match the ethertype in packet_so9cket.c: */
-    frame_hdr->eth_proto[0] = 0x88;
-    frame_hdr->eth_proto[1] = 0xB5;
-
-
     log_info("SENDING WITH PROTOCOL: %hhx%hhx", frame_hdr->eth_proto[0], frame_hdr->eth_proto[1]);
 
     /* Point to frame header */
@@ -220,7 +207,7 @@ int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame 
     msg = calloc(1, sizeof(struct msghdr));
 
     /* Fill out message metadata struct */
-    memcpy(so_name->sll_addr, broadcast_addr, 6);
+    memcpy(so_name->sll_addr, frame_hdr->dst_addr, MAC_ADDRESS_SIZE);
     msg->msg_name = so_name;
     msg->msg_namelen = sizeof(struct sockaddr_ll);
     msg->msg_iovlen = 2;
@@ -256,16 +243,22 @@ int setup_raw_socket(){
         return -1;
 }
 
-int complete_mip_arp(struct sockaddr_ll *so_name, int num_interfaces, int raw_socket_fd, uint8_t mip_address){
+int complete_mip_arp(int raw_socket_fd, struct interface_table *interface_table, uint8_t mip_address){
     int rc = 0;
     int i = 0;
     struct mip_header *request;
+    struct ether_frame *request_frame;
+    uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
     request = create_arp_request_package(mip_address);
+    debug("interface table size: %d", interface_table->size);
 
-    for (i = 0; i < num_interfaces; i++){
-        rc = send_raw_mip_packet(raw_socket_fd, &so_name[i],NULL, request);
+    for (i = 0; i < interface_table->size; i++){
+        
+        request_frame = create_ethernet_frame(&broadcast_addr, interface_table->interfaces[i].so_name);
+        rc = send_raw_mip_packet(raw_socket_fd, interface_table->interfaces[i].so_name, request_frame, request);
         check(rc != -1, "Failed to send arp package for interface");
     }
+    return 1;
 
     error:
         return -1;;
@@ -280,3 +273,13 @@ struct ether_frame *create_response_ethernet_frame(struct ether_frame *request_e
     return response;
 }
 
+struct ether_frame *create_ethernet_frame(int8_t *dest[], struct sockaddr_ll *so_name){
+    struct ether_frame *frame = calloc(1, sizeof(struct ether_frame));
+    /* Fill in Ethernet header */
+    memcpy(frame->dst_addr, dest, MAC_ADDRESS_SIZE);
+    memcpy(frame->src_addr, so_name->sll_addr, MAC_ADDRESS_SIZE);
+    /* Match the ethertype in packet_so9cket.c: */
+    frame->eth_proto[0] = 0x88;
+    frame->eth_proto[1] = 0xB5;
+    return frame;
+}
