@@ -10,10 +10,24 @@
 #include "link.h"
 #include "mip_arp.h"
 #include "mip.h"
+#include "interface.h"
 
 #define INTERFACE_BUF_SIZE 10;
 
 extern void DumpHex(const void* data, size_t size);
+
+
+struct server_data {
+    int raw_socket;
+    int domain_socket;
+    uint8_t mip_address;
+    struct interface_record interfaces[32];
+    struct mip_arp_cache *cache;
+};
+
+int destroy_server_data_self(struct server_data *self){
+    free(self->cache);
+}
 
 struct event_handler
 {
@@ -78,18 +92,24 @@ void handle_domain_socket_disconnect(struct epoll_event *event){
     close(event->data.fd);
 }
 
-void handle_raw_socket_frame(struct epoll_event *event, char *read_buffer, int read_buffer_size){
+// returns MIP header tra which descripes the type of package received
+int handle_raw_socket_frame(struct server_data self, struct epoll_event *event, char *read_buffer, int read_buffer_size){
     int rc = 0;
     struct mip_header received_header;
-    rc = receive_raw_mip_packet(event->data.fd, &received_header);
+    struct ether_frame e_frame;
+    rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_header);
     check(rc != -1, "Failed to receive from raw socket");
-    printf("%d bytes read\nRAW SOCKET Frame:\n", rc);
-    printf("From RAW socket: %s\n", read_buffer);
+    debug("%d bytes read\nRAW SOCKET Frame:\n", rc);
+    debug("From RAW socket: %s\n", read_buffer);
+    if(received_header.tra == 1){
+        struct ether_frame *e_frame_response = create_response_ethernet_frame(&e_frame);
+        struct mip_header *mip_header_response = create_arp_response_package(self.mip_address, &received_header);
+        //rc = send_raw_mip_packet(self.raw_socket, )
+    }
 
     error:
         return;
 }
-
 
 int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epoll_event *events, int event_num, int read_buffer_size, int timeout){
     int rc = 0;
@@ -97,6 +117,12 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
     int event_count = 0;
     size_t bytes_read = 0;
     char read_buffer[read_buffer_size + 1];
+    struct server_data self;
+    self.raw_socket = raw_socket;
+    self.domain_socket = local_domain_socket;
+    self.mip_address = 128;
+    self.cache = create_cache();
+
 
     // Get interfaces
     int interface_n = 0;
@@ -124,7 +150,7 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
             // Raw socket event
             else if(events[i].data.fd == raw_socket){
                 log_info("RAW SOCKET ACTION");
-                handle_raw_socket_frame(&events[i], read_buffer, read_buffer_size);
+                handle_raw_socket_frame(self, &events[i], read_buffer, read_buffer_size);
                 continue;
             }
 
@@ -157,8 +183,11 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
             }
         }
     }
+
+    destroy_server_data_self(&self);
     return 0;
 
     error:
+        destroy_server_data_self(&self);
         return -1;
 }
