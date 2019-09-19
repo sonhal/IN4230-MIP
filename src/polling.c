@@ -8,6 +8,9 @@
 #include <arpa/inet.h>
 #include "dbg.h"
 #include "link.h"
+#include "mip_arp.h"
+
+#define INTERFACE_BUF_SIZE 10;
 
 extern void DumpHex(const void* data, size_t size);
 
@@ -94,6 +97,12 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
     size_t bytes_read = 0;
     char read_buffer[read_buffer_size + 1];
 
+    // Get interfaces
+    int interface_n = 0;
+    struct sockaddr_ll *so_name = calloc(10, sizeof(struct sockaddr_ll));
+    interface_n = collect_intefaces(so_name, 10);
+    //On interfaces to MIP ARP
+    rc = complete_mip_arp(so_name, interface_n, raw_socket, 128);
 
     while(running){
         printf("Polling for input...\n");
@@ -131,6 +140,7 @@ int epoll_loop(int epoll_fd, int local_domain_socket, int raw_socket, struct epo
                 printf("%zd bytes read\nDomain socket read:\n", bytes_read);
                 printf("%s", read_buffer);
                 struct sockaddr_ll *so_name = malloc(sizeof(struct sockaddr_ll));
+                
                 memset(so_name, 0, sizeof(struct sockaddr_ll));
                 
                 rc = last_inteface(so_name);

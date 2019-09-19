@@ -75,6 +75,34 @@ int last_inteface(struct sockaddr_ll *so_name){
         return -1;
 }
 
+int collect_intefaces(struct sockaddr_ll *so_name, int buffer_n){
+    int rc = 0;
+    int i = 0;
+    struct ifaddrs *ifaces, *ifp;
+
+    rc = getifaddrs(&ifaces);
+    check(rc != -1, "Failed to get ip addresses");
+
+    // Walk the list looking for the ifaces interesting to us
+    for(ifp = ifaces; ifp != NULL; ifp = ifp->ifa_next){
+        if(ifp->ifa_addr != NULL && ifp->ifa_addr->sa_family == AF_PACKET){
+
+            // Copy the address info into out variable
+           memcpy(&so_name[i], (struct sockaddr_ll*)ifp->ifa_addr, sizeof(struct sockaddr_ll));
+           i += 1;
+           check(i < buffer_n, "Buffer size surpassed in interface collection");
+        }
+    }
+    /*  After the loop the address info of the last interface
+        enumerated is stored in so_name
+    */
+   free(ifaces);
+   return i+1; // number of collected interfaces
+
+   error:
+        return -1;
+}
+
 
 int receive_raw_packet(int sd, char *buf, size_t len)
 {

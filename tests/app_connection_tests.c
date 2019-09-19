@@ -20,7 +20,7 @@ char *all_tests(){
 
     mu_suite_start();
 
-    mu_run_test(test_create_domain_socket);
+    //mu_run_test(test_create_domain_socket);
 
     return NULL;
 }
