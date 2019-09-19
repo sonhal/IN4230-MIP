@@ -109,17 +109,19 @@ void handle_domain_socket_disconnect(struct epoll_event *event){
 int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event, char *read_buffer, int read_buffer_size){
     int rc = 0;
     struct mip_header received_header;
+    struct sockaddr_ll received_so_name;
     struct ether_frame e_frame;
     struct ether_frame *e_frame_response;
     struct mip_header *mip_header_response;
     struct socketaddr_ll *sock_name;
 
-    rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_header);
+    rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_so_name, &received_header);
     check(rc != -1, "Failed to receive from raw socket");
     debug("%d bytes read\nRAW SOCKET Frame:\n", rc);
     debug("From RAW socket: %s\n", read_buffer);
+    
     if(received_header.tra == 1){
-        e_frame_response= create_response_ethernet_frame(&e_frame);
+        e_frame_response= create_ethernet_frame(e_frame.src_addr, &received_so_name);
         mip_header_response = create_arp_response_package(self->mip_address, &received_header);
         sock_name = calloc(1, SOCKET_ADDR_SIZE);
         rc = get_interface(self->interfaces, sock_name, e_frame.dst_addr);
@@ -129,13 +131,13 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
     }
 
     if(e_frame_response)free(e_frame_response);
-    if(mip_header_response)free(e_frame_response);
-    if(sock_name)free(e_frame_response);
+    if(mip_header_response)free(mip_header_response);
+    if(sock_name)free(sock_name);
 
     error:
         if(e_frame_response)free(e_frame_response);
-        if(mip_header_response)free(e_frame_response);
-        if(sock_name)free(e_frame_response);
+        if(mip_header_response)free(mip_header_response);
+        if(sock_name)free(sock_name);
         return -1;
 }
 

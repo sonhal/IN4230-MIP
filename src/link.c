@@ -90,8 +90,7 @@ int receive_raw_packet(int sd, char *buf, size_t len)
         return -1;
 }
 
-int receive_raw_mip_packet(int sd, struct ether_frame  *frame_hdr, struct mip_header *header){
-    struct sockaddr_ll  so_name;
+int receive_raw_mip_packet(int sd, struct ether_frame  *frame_hdr, struct sockaddr_ll *so_name, struct mip_header *header){
     struct msghdr       msg;
     struct iovec        msgvec[2];
     int 			    rc = 0;
@@ -106,14 +105,14 @@ int receive_raw_mip_packet(int sd, struct ether_frame  *frame_hdr, struct mip_he
 
     /* Fill out message metadata struct */
     //memcpy(so_name->sll_addr, dst_addr, 6);
-    msg.msg_name    = &so_name;
+    msg.msg_name    = so_name;
     msg.msg_namelen = sizeof(struct sockaddr_ll);
     msg.msg_iovlen  = 2;
     msg.msg_iov     = msgvec;
 
     rc = recvmsg(sd, &msg, 0);
     check(rc != -1, "Failed to receive message from raw socket");
-    src_mac = macaddr_str(&so_name);
+    src_mac = macaddr_str(so_name);
 
     log_info("Received mip packet with tra %d\tmip address %d\tsrc mac %s", header->tra, header->src_addr, src_mac);
 
