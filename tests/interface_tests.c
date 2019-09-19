@@ -72,6 +72,14 @@ char *test_get_interface_table(){
     return NULL;
 }
 
+char *test_create_loaded_interface_table(){
+    struct interface_table *table = create_loaded_interface_table();
+    mu_assert(table != NULL, "table pointer is NULL");
+    print_interface_table(table);
+    free(table);
+    return NULL;
+}
+
 
 char *all_tests(){
 
@@ -81,6 +89,7 @@ char *all_tests(){
     mu_run_test(test_append_interface_table);
     mu_run_test(test_print_interface_table);
     mu_run_test(test_get_interface_table);
+    mu_run_test(test_create_loaded_interface_table);
 
     return NULL;
 }

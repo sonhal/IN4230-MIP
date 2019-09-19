@@ -11,6 +11,8 @@
 #include "interface.h"
 #include "dbg.h"
 
+#define INTERFACE_BUFF_SIZE 10
+
 
 struct interface_table *create_interface_table(){
     struct interface_table *table = calloc(1, sizeof(struct interface_table));
@@ -38,6 +40,8 @@ int interface_equal(uint8_t interface_1[], uint8_t interface_2[]){
     return i;
 }
 
+//Attempts to find and load sockaddr_ll pointer into provided pointer corresponding to get_interface argument
+// Returns -1 if unsuccessfull. index of interface in table if successfull.
 int get_interface(struct interface_table *table, struct sockaddr_ll *so_name, uint8_t *get_interface[]){
     int i = 0;
 
@@ -94,6 +98,29 @@ int collect_intefaces(struct sockaddr_ll *so_name, int buffer_n){
  
     error:
          return -1;
+}
+
+// Returns a pointer to a interface table the caller takes ownership to free
+struct interface_table *create_loaded_interface_table(){
+    int num_i = 0;
+    int rc = 0;
+    int i = 0;
+    struct sockaddr_ll *so_names = calloc(INTERFACE_BUFF_SIZE, SOCKET_ADDR_SIZE);
+    struct interface_table *table = create_interface_table();
+    num_i = collect_intefaces(so_names, INTERFACE_BUFF_SIZE);
+    debug("Colleced %d interfaces", num_i);
+
+    for(i = 0; i < num_i; i++){
+        rc = append_interface_table(table, &so_names[i]);
+        check(rc != -1, "Failed to append interface with index %d to interface table", i);
+    }
+
+    return table;
+
+    error:
+        free(so_names);
+        free(table);
+        return NULL;
 }
 
 char *macaddr_str(struct sockaddr_ll *sa){

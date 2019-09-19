@@ -33,6 +33,8 @@ void print_interface_table(struct interface_table *table);
 
 int collect_intefaces(struct sockaddr_ll *so_name, int buffer_n);
 
+struct interface_table *create_loaded_interface_table();
+
 char *macaddr_str(struct sockaddr_ll *sa);
 
 char *macaddr_str_for_int_buff(char address[]);
