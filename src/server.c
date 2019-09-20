@@ -95,7 +95,8 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         append_to_cache(self->cache, event->data.fd, received_header.src_addr, received_so_name.sll_addr);
     }else if (received_header.tra == 3){
         char *ping = "PING!";
-        write(self->domain_socket, ping, strlen(ping));
+        rc = write(self->domain_socket, ping, strlen(ping));
+        check(rc != -1, "Failed to write received message to domain socket: %d", self->domain_socket);
     }
 
     if(e_frame_response)free(e_frame_response);
