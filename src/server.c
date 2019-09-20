@@ -103,6 +103,7 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         char *ping = " PING";
         strcat(ping_buff, ping);
 
+        debug("Sending this message to domain socket: %s", ping_buff);
         rc = write(self->connected_domain_socket, ping, strlen(ping));
         check(rc != -1, "Failed to write received message to domain socket: %d", self->connected_domain_socket);
     }
@@ -122,6 +123,8 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     debug("%zd bytes read\nDomain socket read: %s", bytes_read, read_buffer);
     int rc = 0;
     uint8_t dest_mip_address;
+     struct mip_header *m_header;
+     struct ether_frame *e_frame;
     char *message = calloc(1, sizeof(char) * 64);
 
     // Parse message on domain socket
@@ -142,10 +145,10 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
 
 
     // Create headers for the message
-    struct ether_frame *e_frame = create_ethernet_frame(self->cache->entries[cache_pos].dst_interface, sock_name);
+    e_frame = create_ethernet_frame(self->cache->entries[cache_pos].dst_interface, sock_name);
     debug("src mip addr: %d", src_mip_addr);
     debug("dest mip addr: %d", dest_mip_address);
-    struct mip_header *m_header = create_transport_package(src_mip_addr, dest_mip_address);
+    m_header = create_transport_package(src_mip_addr, dest_mip_address);
 
     // Send the message
     rc = send_raw_mip_packet(sock, sock_name, e_frame, m_header);
