@@ -31,6 +31,8 @@ int interface_equal(uint8_t interface_1[6], uint8_t interface_2[6]);
 
 int get_interface(struct interface_table *table, struct sockaddr_ll *so_name, uint8_t *get_interface[]);
 
+int is_interface_in_table(struct interface_table *table, uint8_t *get_interface[]);
+
 void print_interface_table(struct interface_table *table);
 
 int collect_intefaces(struct sockaddr_ll *so_name, int buffer_n);

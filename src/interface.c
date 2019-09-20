@@ -45,9 +45,9 @@ int interface_equal(uint8_t interface_1[], uint8_t interface_2[]){
 int get_interface(struct interface_table *table, struct sockaddr_ll *so_name, uint8_t *get_interface[]){
     int i = 0;
 
-    printf("Table size: %d\n", table->size);
+    debug("Table size: %d\n", table->size);
     for(i = 0; i < table->size; i++){
-        printf("checking interface at: %d\n", i);
+        debug("checking interface at: %d\n", i);
         if(interface_equal(get_interface, table->interfaces[i].interface)){
             memcpy(so_name, table->interfaces[i].so_name, SOCKET_ADDR_SIZE);
             return i;
@@ -55,6 +55,17 @@ int get_interface(struct interface_table *table, struct sockaddr_ll *so_name, ui
     }
     return -1;
 }
+
+int is_interface_in_table(struct interface_table *table, uint8_t *get_interface[]){
+    int i = 0;
+    for(i = 0; i < table->size; i++){
+        if(interface_equal(get_interface, table->interfaces[i].interface)){
+            return i;
+        }
+    }
+    return -1;
+}
+
 
 void print_interface_table(struct interface_table *table){
     char *macaddr;
