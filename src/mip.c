@@ -20,7 +20,7 @@ struct mip_header *create_arp_request_package(uint8_t src_addr){
 }
 
 // Returns heap allocated MIP header ready for use as a response to a ARP request
-struct mip_header *create_arp_response_package(int src_addr, struct mip_header *arp_request){
+struct mip_header *create_arp_response_package(uint8_t src_addr, struct mip_header *arp_request){
     struct mip_header *header;
     check(arp_request != NULL, "Invalid argument, arp_request was NULL");
     header = create_arp_request_package(src_addr);
