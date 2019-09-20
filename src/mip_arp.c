@@ -15,9 +15,8 @@ struct mip_arp_cache *create_cache(){
 
 
 int append_to_cache(struct mip_arp_cache *cache, int src_socket, uint8_t mip_address, uint8_t interface[]){
-    struct mip_arp_cache_entry  new_entry = {.address=mip_address};
+    struct mip_arp_cache_entry  new_entry = {.address=mip_address, .src_socket=src_socket};
     memcpy(new_entry.dst_interface, interface, (sizeof(uint8_t) * 6));
-
     cache->entries[cache->size] = new_entry;
     cache->size++;
     return cache->size;
@@ -54,7 +53,7 @@ void print_cache(struct mip_arp_cache *cache){
     printf("----- mipd cache -----\n");
     for(i = 0; i < cache->size; i++){
         entry = cache->entries[i];
-        printf("cache entry %d\t mip address %d\t interface ", i, entry.address);
+        printf("cache entry %d\t mip address %d\t interface \tsrc_socet %d", i, entry.address, entry.src_socket);
 
         int k = 0;
         for(k = 0; k < 5; k++){
