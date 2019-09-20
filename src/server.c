@@ -30,16 +30,22 @@ void destroy_server_self(struct server_self *self){
     free(self);
 }
 
-struct server_self *init_server_self(int listening_domain_socket, struct interface_table *table){
+struct server_self *init_server_self(int listening_domain_socket, struct interface_table *table, int debug_enabled){
     struct server_self *self;
     self = calloc(1, sizeof(struct server_self));
     self->listening_domain_socket = listening_domain_socket;
     self->connected_domain_socket = -1;
     self->i_table = table;
     self->cache = create_cache();
+    self->debug_enabled = debug_enabled;
     return self;
 }
 
+void server_log(struct server_self *self, struct mip_header *header){
+    if(self->debug_enabled){
+        printf("[PACKAGE RECEIVED] from mip_addr: %d\t tra: %d\tpayload length: %d", header->src_addr, header->tra, header->payload_len);
+    }
+}
 
 void handle_domain_socket_connection(struct server_self *self, int epoll_fd, struct epoll_event *event){
     int rc = 0;
@@ -85,6 +91,7 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
     int mip_addr = self->i_table->interfaces[i_pos].mip_address;
     sock_name = self->i_table->interfaces[i_pos].so_name;
 
+    server_log(self, &received_header);
     if(received_header.tra == 1){
         debug("received header - src: %d\t dest: %d", received_header.src_addr, received_header.dst_addr);
 

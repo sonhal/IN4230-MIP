@@ -37,7 +37,7 @@ int main(int argc, char *argv[]){
     log_info("Started Ping server");
 
     int rc = 0;
-    char buffer[256];
+    char *buffer = calloc(1, 256);
     int so = 0;
     struct sockaddr_un so_name;
   
@@ -70,10 +70,15 @@ int main(int argc, char *argv[]){
         if(event_n == 0){
             log_info("Ping server polling...");
          }else {
-            rc = read(so, buffer, 256);
-            check(rc != -1, "Failed to read repsonse from mipd");
-            log_info("pong server received from mipd: %s", buffer);
+            do
+            {
+                rc = read(so, buffer, 256);
+                check(rc != -1, "Failed to read repsonse from mipd");
+                log_info("RECEIVED: %s", buffer);
+            } while (rc > 0);
+
             rc = write(so, buffer, rc);
+            check(rc != -1, "Failed to write to mipd");
         }
         memset(buffer, 0, 256);
     }

@@ -120,7 +120,7 @@ int main(int argc, char *argv[]){
     rc = add_to_table_to_epoll(epoll_fd, i_table);
     check(rc != -1, "Failed to add interfaces to epoll");
 
-    struct server_self *server = init_server_self(local_socket, i_table);
+    struct server_self *server = init_server_self(local_socket, i_table, is_debug);
     // MAIN application loop
     struct epoll_event events[MAX_EVENTS];
     rc = start_server(server, epoll_fd, &events, MAX_EVENTS, MAX_READ, 30000);
