@@ -77,7 +77,8 @@ int main(int argc, char *argv[]){
                 log_info("RECEIVED: %s", buffer);
             } while (rc > 0);
 
-            rc = write(so, buffer, rc);
+            log_info("Sending to mipd: %s", buffer);
+            rc = write(so, buffer, strlen(buffer));
             check(rc != -1, "Failed to write to mipd");
         }
         memset(buffer, 0, 256);
