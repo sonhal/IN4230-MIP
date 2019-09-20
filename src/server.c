@@ -118,7 +118,7 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     // Parse message on domain socket
     parse_domain_socket_request(read_buffer, &dest_mip_address, message);
 
-    int sock = query_dest_mip_address_src_socket(self->cache, dest_mip_address);
+    int sock = query_mip_address_src_socket(self->cache, dest_mip_address);
     check(sock != -1, "could not lockate mip address in cache");
 
     int i_pos = get_interface_pos_for_socket(self->i_table, sock);
@@ -128,7 +128,7 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
 
     uint8_t src_mip_addr = self->i_table->interfaces[i_pos].mip_address;
     struct sockaddr_ll *sock_name = self->i_table->interfaces[i_pos].so_name;
-    int cache_pos = query_dest_mip_address_pos(self->cache, dest_mip_address);
+    int cache_pos = query_mip_address_pos(self->cache, dest_mip_address);
     check(cache_pos != -1, "Could not locate cache pos");
 
 
