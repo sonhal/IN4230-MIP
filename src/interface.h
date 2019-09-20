@@ -14,6 +14,8 @@
 struct interface_record {
     unsigned char interface[8];
     struct sockaddr_ll *so_name;
+    uint8_t mip_address;
+    int raw_socket;
 };
 
 struct interface_table {
@@ -35,6 +37,14 @@ int collect_intefaces(struct sockaddr_ll *so_name, int buffer_n);
 
 struct interface_table *create_loaded_interface_table();
 
+struct interface_table *apply_mip_addresses(const struct interface_table *table, uint8_t *mip_addresses[], int num_addresses);
+
+int is_socket_in_table(struct interface_table *table, int fd);
+
+int get_interface_pos_for_socket(struct interface_table *table, int fd);
+
 char *macaddr_str(struct sockaddr_ll *sa);
 
 char *macaddr_str_for_int_buff(char address[]);
+
+int close_open_sockets_on_table_interface(struct interface_table *table);

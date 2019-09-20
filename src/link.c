@@ -242,19 +242,24 @@ int setup_raw_socket(){
         return -1;
 }
 
-int complete_mip_arp(int raw_socket_fd, struct interface_table *interface_table, uint8_t mip_address){
+int complete_mip_arp(struct interface_table *table){
     int rc = 0;
     int i = 0;
     struct mip_header *request;
     struct ether_frame *request_frame;
     uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
-    request = create_arp_request_package(mip_address);
-    debug("interface table size: %d", interface_table->size);
+    
+    debug("interface table size: %d", table->size);
 
-    for (i = 0; i < interface_table->size; i++){
-        
-        request_frame = create_ethernet_frame(&broadcast_addr, interface_table->interfaces[i].so_name);
-        rc = send_raw_mip_packet(raw_socket_fd, interface_table->interfaces[i].so_name, request_frame, request);
+    for (i = 0; i < table->size; i++){
+        int mip_addr = table->interfaces[i].mip_address;
+        int socket = table->interfaces[i].raw_socket;
+        struct sockaddr_ll *so_name = table->interfaces[i].so_name;
+        int8_t mac_addr = table->interfaces[i].interface;
+
+        request = create_arp_request_package(mip_addr);
+        request_frame = create_ethernet_frame(&broadcast_addr, &mac_addr);
+        rc = send_raw_mip_packet(socket, so_name, request_frame, request);
         check(rc != -1, "Failed to send arp package for interface");
     }
     return 1;

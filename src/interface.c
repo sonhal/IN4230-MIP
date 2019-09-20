@@ -62,9 +62,10 @@ void print_interface_table(struct interface_table *table){
     printf("----- Interface table -----\n");
     for(i = 0; i < table->size; i++){
         macaddr = macaddr_str_for_int_buff(&table->interfaces[i].interface);
-        printf("interface:%d\taddress: %s\n", i, macaddr);
+        printf("interface:%d\taddress: %s\tmip: %d\t raw_socket: %d\n", i, macaddr, table->interfaces[i].mip_address, table->interfaces[i].raw_socket);
         free(macaddr);
     }
+    printf("---------------------------\n");
 }
 
 // Returns number of collected interfaces
@@ -121,6 +122,55 @@ struct interface_table *create_loaded_interface_table(){
         free(so_names);
         free(table);
         return NULL;
+}
+
+// Creates a new interface table with mip addresses linked to the table interfaces
+struct interface_table *apply_mip_addresses(const struct interface_table *table, uint8_t *mip_addresses[], int num_addresses) {
+    int rc = 0;
+    int i = 0;
+    struct interface_table *new_table = create_interface_table();
+    for(i = 0; i < num_addresses; i++){
+        new_table->interfaces[i] = table->interfaces[i];
+        new_table->interfaces[i].mip_address = mip_addresses[i];
+        new_table->interfaces[i].raw_socket = -1;
+        new_table->size += 1;
+    }
+    debug("new table size: %d", new_table->size);
+    return new_table;
+}
+
+int is_socket_in_table(struct interface_table *table, int fd){
+    int rc = 0;
+    int i = 0;
+    for(i = 0; i < table->size; i++){
+        if(table->interfaces[i].raw_socket == fd){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int get_interface_pos_for_socket(struct interface_table *table, int fd){
+    int rc = 0;
+    int i = 0;
+    for(i = 0; i < table->size; i++){
+        if(table->interfaces[i].raw_socket == fd){
+            return i;
+        }
+    }
+    return 0;
+}
+
+
+int close_open_sockets_on_table_interface(struct interface_table *table) {
+    int rc = 0;
+    int i = 0;
+    int socket = -1;
+    for(i = 0; i < table->size; i++){
+        socket = table->interfaces[i].raw_socket;
+        if(socket) close(socket);
+    }
+    return 1;
 }
 
 char *macaddr_str(struct sockaddr_ll *sa){
