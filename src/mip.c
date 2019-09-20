@@ -32,3 +32,17 @@ struct mip_header *create_arp_response_package(uint8_t src_addr, struct mip_head
         exit("Failure");
         return NULL;
 }
+
+
+// Returns atransport mip header
+struct mip_header *create_transport_package(uint8_t src_addr, uint8_t dest_addr){
+    struct mip_header *header;
+    header = create_arp_request_package(src_addr);
+    header->tra = 3;
+    header->dst_addr = dest_addr;
+    return header;
+
+    error:
+        exit("Failure");
+        return NULL;
+}

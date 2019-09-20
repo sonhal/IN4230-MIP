@@ -16,11 +16,24 @@ char *test_create_domain_socket(){
 }
 
 
+char *test_parse_domain_socket_input(){
+    char *buffer = "12 ping";
+    int buff_n = strlen(buffer);
+    uint8_t mip_addr;
+    char *message = NULL;
+    parse_domain_socket_request(buffer, buff_n, &mip_addr);
+    printf("mip address: %d", mip_addr);
+    return NULL;
+}
+
+
+
 char *all_tests(){
 
     mu_suite_start();
 
     //mu_run_test(test_create_domain_socket);
+    mu_run_test(test_parse_domain_socket_input);
 
     return NULL;
 }

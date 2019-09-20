@@ -278,6 +278,16 @@ struct ether_frame *create_response_ethernet_frame(struct ether_frame *request_e
     return response;
 }
 
+struct ether_frame *create_transport_ethernet_frame(uint8_t src[], uint8_t dest[]){
+    struct ether_frame *frame = calloc(1, sizeof(struct ether_frame));
+    memcpy(frame->dst_addr, &dest, sizeof( uint8_t) * 6);
+    memcpy(frame->src_addr, &src, sizeof( uint8_t) * 6);
+    frame->eth_proto[0] = 0x88;
+    frame->eth_proto[1] = 0xB5;
+    return frame;
+}
+
+
 struct ether_frame *create_ethernet_frame(int8_t *dest[], struct sockaddr_ll *so_name){
     struct ether_frame *frame = calloc(1, sizeof(struct ether_frame));
     /* Fill in Ethernet header */

@@ -27,4 +27,6 @@ int complete_mip_arp(struct interface_table *table);
 
 struct ether_frame *create_response_ethernet_frame(struct ether_frame *request_ethernet);
 
+struct ether_frame *create_transport_ethernet_frame(uint8_t src[], uint8_t dest[]);
+
 struct ether_frame *create_ethernet_frame(int8_t *dest[], struct sockaddr_ll *so_name);

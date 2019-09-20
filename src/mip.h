@@ -11,3 +11,5 @@ struct mip_header {
 struct mip_header *create_arp_request_package(uint8_t src_addr);
 
 struct mip_header *create_arp_response_package(uint8_t src_addr, struct mip_header *arp_request);
+
+struct mip_header *create_transport_package(uint8_t src_addr, uint8_t dest_addr);

@@ -6,7 +6,10 @@
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
 #include <arpa/inet.h>
+
+
 #include "dbg.h"
+#include "app_connection.h"
 #include "link.h"
 #include "mip_arp.h"
 #include "mip.h"
@@ -15,6 +18,7 @@
 #include "server.h"
 
 #define INTERFACE_BUF_SIZE 10;
+#define MIP_MESSAGE_BUF 1600;
 
 extern void DumpHex(const void* data, size_t size);
 
@@ -86,6 +90,9 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         append_to_cache(self->cache, event->data.fd, received_header.src_addr, received_so_name.sll_addr);
     }else if (received_header.tra == 0){
         append_to_cache(self->cache, event->data.fd, received_header.src_addr, received_so_name.sll_addr);
+    }else if (received_header.tra == 3){
+        char *ping = "PING!";
+        write(self->domain_socket, ping, strlen(ping));
     }
 
     if(e_frame_response)free(e_frame_response);
@@ -140,16 +147,50 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
                 printf("%zd bytes read\n", bytes_read);
                 handle_domain_socket_disconnect(&events[i]);
                 continue;
-            }
-            else {
-                printf("%zd bytes read\nDomain socket read:\n", bytes_read);
-                printf("%s", read_buffer);
-            }
-
-            if(!strncmp(read_buffer, "stop\n", 5)){
+            } else if(!strncmp(read_buffer, "stop\n", 5)){
                 running = 0;
                 log_info("Exiting...");
+            } else {
+                printf("%zd bytes read\nDomain socket read:\n", bytes_read);
+                printf("%s", read_buffer);
+                int  i = 0;
+                char token;
+                for (i = 0; i < 2; i++){
+                    uint8_t mip_address;
+                    char *message = calloc(1, sizeof(char) * 64);
+                    parse_domain_socket_request(read_buffer, &mip_address, message);
+                    int sock = query_mip_address_src_socket(self->cache, mip_address);
+                    if(sock == -1){
+                        printf("could not lockate mip address in cache\n");
+                        free(message);
+                        continue;
+                    }
+                    int i_pos = get_interface_pos_for_socket(self->i_table, sock);
+                    if (i_pos == -1) {
+                        printf("COuld not locate sock address in interface table\n");
+                        free(message);
+                        continue;
+                    }
+                    debug("position found for socket: %d", i_pos);
+                    int src_mip_addr = self->i_table->interfaces[i_pos].mip_address;
+                    struct sockaddr_ll *sock_name = self->i_table->interfaces[i_pos].so_name;
+                    int cache_pos = query_mip_address_pos(self->cache, mip_address);
+                    if(cache_pos == -1){
+                        printf("COuld not locate cache pos");
+                        free(message);
+                        continue;
+                    }
+                    
+                    struct ether_frame *e_frame = create_transport_ethernet_frame(sock_name->sll_addr, self->cache->entries[cache_pos].dst_interface);
+                    struct mip_header *m_header = create_transport_package(src_mip_addr, mip_address);
+                    rc = send_raw_mip_packet(socket, sock_name, e_frame, m_header);
+                    check(rc != -1, "Failed to send transport packet");
+                }
+                // int socket = query_mip_address_src_socket
+                // rc = send_raw_mip_packet(event->data.fd, sock_name, e_frame_response, mip_header_response);
+                // check(rc != -1, "Failed to send arp response package");
             }
+
         }
         print_cache(self->cache);
     }

@@ -5,19 +5,7 @@
 #include "dbg.h"
 #include "mip.h"
 #include "link.h"
-
-struct mip_arp_cache_entry {
-    uint8_t address;
-    int src_socket;
-    uint8_t dst_interface[6];
-};
-
-struct mip_arp_cache
-{
-    struct mip_arp_cache_entry entries[64];
-    int size;
-};
-
+#include "mip_arp.h"
 
 struct mip_arp_cache *create_cache(){
     struct mip_arp_cache *cache;
@@ -42,6 +30,18 @@ int query_mip_address_src_socket(struct mip_arp_cache *cache, uint8_t mip_addres
     for (i = 0; i < cache->size; i++){
         if(mip_address == cache->entries[i].address){
             return cache->entries[i].src_socket;
+        }
+    }
+    return -1;
+}
+
+// return socket mip address can be reached trough if it is in the cache, -1 if it does not exist in the cache
+int query_mip_address_pos(struct mip_arp_cache *cache, uint8_t mip_address){
+    int rc = 0;
+    int i = 0;
+    for (i = 0; i < cache->size; i++){
+        if(mip_address == cache->entries[i].address){
+            return i;
         }
     }
     return -1;
