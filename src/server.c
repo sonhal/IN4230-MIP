@@ -105,7 +105,50 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         return -1;
 }
 
+// Handle a request to send a message on the domain socket
+int handle_domain_socket_request(struct server_self *self, int bytes_read, char *read_buffer){
+    debug("%zd bytes read\nDomain socket read: %s", bytes_read, read_buffer);
+    int rc = 0;
+    uint8_t mip_address;
+    char *message = calloc(1, sizeof(char) * 64);
 
+    // Parse message on domain socket
+    parse_domain_socket_request(read_buffer, &mip_address, message);
+
+    int sock = query_mip_address_src_socket(self->cache, mip_address);
+    check(sock != -1, "could not lockate mip address in cache");
+
+    int i_pos = get_interface_pos_for_socket(self->i_table, sock);
+    check(i_pos != -1, "Could not locate sock address in interface table");
+
+    debug("position found for socket: %d", i_pos);
+
+    int src_mip_addr = self->i_table->interfaces[i_pos].mip_address;
+    struct sockaddr_ll *sock_name = self->i_table->interfaces[i_pos].so_name;
+    int cache_pos = query_mip_address_pos(self->cache, mip_address);
+    check(cache_pos != -1, "Could not locate cache pos");
+
+
+    // Create headers for the message
+    struct ether_frame *e_frame = create_transport_ethernet_frame(sock_name->sll_addr, self->cache->entries[cache_pos].dst_interface);
+    struct mip_header *m_header = create_transport_package(src_mip_addr, mip_address);
+
+    // Send the message
+    rc = send_raw_mip_packet(socket, sock_name, e_frame, m_header);
+    check(rc != -1, "Failed to send transport packet");
+
+    free(message);
+    return 0;
+
+    error:
+        free(message);
+        return -1;
+}
+
+
+/*
+Main server function. Starts the server loop and contains the entry for branching into different event handlers
+*/
 int start_server(struct server_self *self, int epoll_fd, struct epoll_event *events, int event_num, int read_buffer_size, int timeout){
     int rc = 0;
     int running = 1;
@@ -151,44 +194,7 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
                 running = 0;
                 log_info("Exiting...");
             } else {
-                printf("%zd bytes read\nDomain socket read:\n", bytes_read);
-                printf("%s", read_buffer);
-                int  i = 0;
-                char token;
-                for (i = 0; i < 2; i++){
-                    uint8_t mip_address;
-                    char *message = calloc(1, sizeof(char) * 64);
-                    parse_domain_socket_request(read_buffer, &mip_address, message);
-                    int sock = query_mip_address_src_socket(self->cache, mip_address);
-                    if(sock == -1){
-                        printf("could not lockate mip address in cache\n");
-                        free(message);
-                        continue;
-                    }
-                    int i_pos = get_interface_pos_for_socket(self->i_table, sock);
-                    if (i_pos == -1) {
-                        printf("COuld not locate sock address in interface table\n");
-                        free(message);
-                        continue;
-                    }
-                    debug("position found for socket: %d", i_pos);
-                    int src_mip_addr = self->i_table->interfaces[i_pos].mip_address;
-                    struct sockaddr_ll *sock_name = self->i_table->interfaces[i_pos].so_name;
-                    int cache_pos = query_mip_address_pos(self->cache, mip_address);
-                    if(cache_pos == -1){
-                        printf("COuld not locate cache pos");
-                        free(message);
-                        continue;
-                    }
-                    
-                    struct ether_frame *e_frame = create_transport_ethernet_frame(sock_name->sll_addr, self->cache->entries[cache_pos].dst_interface);
-                    struct mip_header *m_header = create_transport_package(src_mip_addr, mip_address);
-                    rc = send_raw_mip_packet(socket, sock_name, e_frame, m_header);
-                    check(rc != -1, "Failed to send transport packet");
-                }
-                // int socket = query_mip_address_src_socket
-                // rc = send_raw_mip_packet(event->data.fd, sock_name, e_frame_response, mip_header_response);
-                // check(rc != -1, "Failed to send arp response package");
+                handle_domain_socket_request(self, bytes_read, read_buffer);
             }
 
         }

@@ -116,7 +116,6 @@ int main(int argc, char *argv[]){
     struct epoll_event local_domain_event = create_epoll_in_event(local_socket);
     struct epoll_event events_to_handle[] = {stdin_event, local_domain_event};
 
-    
     epoll_fd = setup_epoll(events_to_handle, 2);
     rc = add_to_table_to_epoll(epoll_fd, i_table);
     check(rc != -1, "Failed to add interfaces to epoll");
