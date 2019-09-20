@@ -43,6 +43,5 @@ struct mip_header *create_transport_package(uint8_t src_addr, uint8_t dest_addr)
     return header;
 
     error:
-        exit("Failure");
         return NULL;
 }

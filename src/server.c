@@ -126,7 +126,7 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
 
     debug("position found for socket: %d", i_pos);
 
-    int src_mip_addr = self->i_table->interfaces[i_pos].mip_address;
+    uint8_t src_mip_addr = self->i_table->interfaces[i_pos].mip_address;
     struct sockaddr_ll *sock_name = self->i_table->interfaces[i_pos].so_name;
     int cache_pos = query_mip_address_pos(self->cache, mip_address);
     check(cache_pos != -1, "Could not locate cache pos");
