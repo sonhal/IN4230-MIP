@@ -77,6 +77,8 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
     sock_name = self->i_table->interfaces[i_pos].so_name;
 
     if(received_header.tra == 1){
+        debug("received header - src: %d\t dest: %d", received_header.src_addr, received_header.dst_addr);
+        
         e_frame_response = create_ethernet_frame(e_frame.src_addr, &received_so_name);
         mip_header_response = create_arp_response_package(mip_addr, &received_header);
         check(rc != -1, "Failed to get interface to send return arp on");

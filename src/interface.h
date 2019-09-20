@@ -8,7 +8,7 @@
 #include <arpa/inet.h>		/* htons */
 #include <ifaddrs.h>		/* getifaddrs */
 
-#define MAC_ADDRESS_SIZE (8 * sizeof( unsigned char))
+#define MAC_ADDRESS_SIZE (6 * sizeof( unsigned char))
 #define SOCKET_ADDR_SIZE sizeof(struct sockaddr_ll)
 
 struct interface_record {
