@@ -11,7 +11,7 @@ struct mip_header *create_arp_request_package(uint8_t src_addr){
     struct mip_header *header;
     header = calloc(1, sizeof(struct mip_header));
     header->tra = 1;
-    header->ttl = 32;
+    header->ttl = 15;
     header->payload_len = 0;
     header->dst_addr = 255;
     header->src_addr = src_addr;
