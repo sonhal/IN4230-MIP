@@ -72,7 +72,7 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
     debug("%d bytes read\nRAW SOCKET Frame:\n", rc);
     debug("From RAW socket: %s\n", read_buffer);
     int i_pos = get_interface_pos_for_socket(self->i_table, event->data.fd);
-    debug("positon found for socket: %d", i_pos);
+    debug("position found for socket: %d", i_pos);
     int mip_addr = self->i_table->interfaces[i_pos].mip_address;
     sock_name = self->i_table->interfaces[i_pos].so_name;
 

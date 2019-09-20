@@ -192,6 +192,8 @@ int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame 
     int rc = 0;
     struct msghdr *msg;
     struct iovec msgvec[2];
+    struct sockaddr_ll tmp_so_name;
+    memcpy(&tmp_so_name, so_name, sizeof(struct sockaddr_ll));
 
     log_info("SENDING WITH PROTOCOL: %hhx%hhx", frame_hdr->eth_proto[0], frame_hdr->eth_proto[1]);
 
@@ -206,20 +208,20 @@ int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame 
     msg = calloc(1, sizeof(struct msghdr));
 
     /* Fill out message metadata struct */
-    msg->msg_name = so_name;
+    msg->msg_name = &tmp_so_name;
     msg->msg_namelen = sizeof(struct sockaddr_ll);
     msg->msg_iovlen = 2;
     msg->msg_iov = msgvec;
 
     printf("Sending %d bytes on if with index: %d\n",
-	rc, so_name->sll_ifindex);
+	rc, tmp_so_name.sll_ifindex);
 
     /* Construct and send message */
     rc = sendmsg(so, msg, 0);
     check(rc != -1, "Failed to send mip package");
 
     printf("Sent %d bytes on if with index: %d\n",
-	rc, so_name->sll_ifindex);
+	rc, tmp_so_name.sll_ifindex);
 
     free(msg);
     return 0;
