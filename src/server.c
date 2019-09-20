@@ -60,12 +60,12 @@ void handle_domain_socket_disconnect(struct epoll_event *event){
 // returns MIP header tra which descripes the type of package received
 int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event, char *read_buffer, int read_buffer_size){
     int rc = 0;
-    struct mip_header received_header;
-    struct sockaddr_ll received_so_name;
-    struct ether_frame e_frame;
-    struct ether_frame *e_frame_response;
-    struct mip_header *mip_header_response;
-    struct socketaddr_ll *sock_name;
+    struct mip_header received_header = {};
+    struct sockaddr_ll received_so_name = {};
+    struct ether_frame e_frame = {};
+    struct ether_frame *e_frame_response = NULL;
+    struct mip_header *mip_header_response = NULL;
+    struct socketaddr_ll *sock_name = NULL;
 
     rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_so_name, &received_header);
     check(rc != -1, "Failed to receive from raw socket");
@@ -78,7 +78,7 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
 
     if(received_header.tra == 1){
         debug("received header - src: %d\t dest: %d", received_header.src_addr, received_header.dst_addr);
-        
+
         e_frame_response = create_ethernet_frame(e_frame.src_addr, &received_so_name);
         mip_header_response = create_arp_response_package(mip_addr, &received_header);
         check(rc != -1, "Failed to get interface to send return arp on");
