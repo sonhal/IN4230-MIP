@@ -83,6 +83,7 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         check(rc != -1, "Failed to get interface to send return arp on");
         rc = send_raw_mip_packet(event->data.fd, sock_name, e_frame_response, mip_header_response);
         check(rc != -1, "Failed to send arp response package");
+        append_to_cache(self->cache, event->data.fd, received_header.src_addr, received_so_name.sll_addr);
     }
 
     if(e_frame_response)free(e_frame_response);
@@ -148,6 +149,7 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
                 log_info("Exiting...");
             }
         }
+        print_cache(self->cache);
     }
 
     destroy_server_self(self);

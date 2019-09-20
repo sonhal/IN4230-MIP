@@ -20,8 +20,8 @@ char *test_append_cache(){
     struct mip_arp_cache *cache = create_cache();
     uint8_t interface[] = {0xaf, 0xff, 0xff, 0x00, 0xff, 0xff};
     int index = -1;
-    index = append_to_cache(cache, 255, &interface);
-    index = append_to_cache(cache, 128, &interface);
+    index = append_to_cache(cache, 255,1, &interface);
+    index = append_to_cache(cache, 128,1, &interface);
 
     mu_assert(index == 1, "index is not 1");
     //mu_assert(cache->entries[1].address == 128, "entry at index 1 should have address 128");
@@ -33,9 +33,9 @@ char *test_print_cache(){
     struct mip_arp_cache *cache = create_cache();
     uint8_t interface[] = {0xff, 0xff, 0x00, 0xff, 0xff, 0xff};
     int index = -1;
-    index = append_to_cache(cache, 255, &interface);
+    index = append_to_cache(cache, 255,1, &interface);
     uint8_t interface2[] = {0xaf, 0xff, 0xff, 0xff, 0xff, 0xff};
-    index = append_to_cache(cache, 128, &interface2);
+    index = append_to_cache(cache, 128,1, &interface2);
 
     print_cache(cache);
     free(cache);
