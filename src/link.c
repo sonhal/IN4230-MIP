@@ -212,21 +212,21 @@ int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame 
     msg->msg_iov = msgvec;
 
     printf("Sending %d bytes on if with index: %d\n",
-	 rc, so_name->sll_ifindex);
+	rc, so_name->sll_ifindex);
 
     /* Construct and send message */
     rc = sendmsg(so, msg, 0);
-    if (rc == -1) {
-    perror("sendmsg");
-    free(msg);
-    return -1;
-    }
+    check(rc != -1, "Failed to send mip package");
 
-     printf("Sent %d bytes on if with index: %d\n",
-	 rc, so_name->sll_ifindex);
+    printf("Sent %d bytes on if with index: %d\n",
+	rc, so_name->sll_ifindex);
 
     free(msg);
     return 0;
+
+    error:
+        free(msg);
+        return -1;
 }
 
 
