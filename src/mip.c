@@ -24,7 +24,8 @@ struct mip_header *create_arp_response_package(uint8_t src_addr, struct mip_head
     struct mip_header *header;
     check(arp_request != NULL, "Invalid argument, arp_request was NULL");
     header = create_arp_request_package(src_addr);
-    header->dst_addr = 100;
+    header->tra = 0;
+    header->dst_addr = arp_request->src_addr;
     return header;
 
     error:
