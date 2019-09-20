@@ -112,13 +112,13 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
 int handle_domain_socket_request(struct server_self *self, int bytes_read, char *read_buffer){
     debug("%zd bytes read\nDomain socket read: %s", bytes_read, read_buffer);
     int rc = 0;
-    uint8_t mip_address;
+    uint8_t dest_mip_address;
     char *message = calloc(1, sizeof(char) * 64);
 
     // Parse message on domain socket
-    parse_domain_socket_request(read_buffer, &mip_address, message);
+    parse_domain_socket_request(read_buffer, &dest_mip_address, message);
 
-    int sock = query_mip_address_src_socket(self->cache, mip_address);
+    int sock = query_dest_mip_address_src_socket(self->cache, dest_mip_address);
     check(sock != -1, "could not lockate mip address in cache");
 
     int i_pos = get_interface_pos_for_socket(self->i_table, sock);
@@ -128,13 +128,15 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
 
     uint8_t src_mip_addr = self->i_table->interfaces[i_pos].mip_address;
     struct sockaddr_ll *sock_name = self->i_table->interfaces[i_pos].so_name;
-    int cache_pos = query_mip_address_pos(self->cache, mip_address);
+    int cache_pos = query_dest_mip_address_pos(self->cache, dest_mip_address);
     check(cache_pos != -1, "Could not locate cache pos");
 
 
     // Create headers for the message
     struct ether_frame *e_frame = create_ethernet_frame(self->cache->entries[cache_pos].dst_interface, sock_name);
-    struct mip_header *m_header = create_transport_package(src_mip_addr, mip_address);
+    debug("src mip addr: %d", src_mip_addr);
+    debug("dest mip addr: %d", dest_mip_address);
+    struct mip_header *m_header = create_transport_package(src_mip_addr, dest_mip_address);
 
     // Send the message
     rc = send_raw_mip_packet(socket, sock_name, e_frame, m_header);
