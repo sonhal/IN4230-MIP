@@ -6,6 +6,7 @@
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 
 #include "dbg.h"
@@ -98,7 +99,7 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
     }else if (received_header.tra == 3){
         debug("Request is transport type request");
         char ping_buff[20];
-        iota(received_header.src_addr, ping_buff, 10);
+        snprintf (ping_buff, sizeof(ping_buff), "%d", received_header.src_addr);
         char *ping = " PING";
         strcat(ping_buff, ping);
 
