@@ -84,6 +84,8 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         rc = send_raw_mip_packet(event->data.fd, sock_name, e_frame_response, mip_header_response);
         check(rc != -1, "Failed to send arp response package");
         append_to_cache(self->cache, event->data.fd, received_header.src_addr, received_so_name.sll_addr);
+    }else if (received_header.tra == 0){
+        append_to_cache(self->cache, event->data.fd, received_header.src_addr, received_so_name.sll_addr);
     }
 
     if(e_frame_response)free(e_frame_response);
