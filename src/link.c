@@ -187,7 +187,7 @@ int send_raw_package(int sd, struct sockaddr_ll *so_name, char *message, int mes
     return 0;
 }
 
-int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame *frame_hdr, struct mip_header *mip_header){
+int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame *frame_hdr, struct mip_header *m_header){
     int so = sd;
     int rc = 0;
     struct msghdr *msg;
@@ -201,8 +201,8 @@ int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame 
     msgvec[0].iov_base = frame_hdr;
     msgvec[0].iov_len = sizeof(struct ether_frame);
     /* Point to frame payload */
-    msgvec[1].iov_base = mip_header;
-    msgvec[1].iov_len = sizeof(mip_header);
+    msgvec[1].iov_base = m_header;
+    msgvec[1].iov_len = sizeof(struct mip_header);
 
     /* Allocate a zeroed-out message info struct */
     msg = calloc(1, sizeof(struct msghdr));
