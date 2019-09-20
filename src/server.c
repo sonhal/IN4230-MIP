@@ -139,7 +139,7 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     struct mip_header *m_header = create_transport_package(src_mip_addr, dest_mip_address);
 
     // Send the message
-    rc = send_raw_mip_packet(socket, sock_name, e_frame, m_header);
+    rc = send_raw_mip_packet(sock, sock_name, e_frame, m_header);
     check(rc != -1, "Failed to send transport packet");
 
     free(message);
