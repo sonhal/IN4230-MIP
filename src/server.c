@@ -29,17 +29,18 @@ void destroy_server_self(struct server_self *self){
     free(self);
 }
 
-struct server_self *init_server_self(int domain_socket, struct interface_table *table){
+struct server_self *init_server_self(int listening_domain_socket, struct interface_table *table){
     struct server_self *self;
     self = calloc(1, sizeof(struct server_self));
-    self->domain_socket = domain_socket;
+    self->listening_domain_socket = listening_domain_socket;
+    self->connected_domain_socket = -1;
     self->i_table = table;
     self->cache = create_cache();
     return self;
 }
 
 
-void handle_domain_socket_connection(int epoll_fd, struct epoll_event *event){
+void handle_domain_socket_connection(struct server_self *self, int epoll_fd, struct epoll_event *event){
     int rc = 0;
 
     debug("DOMAIN SOCKET ACTION!");
@@ -47,11 +48,12 @@ void handle_domain_socket_connection(int epoll_fd, struct epoll_event *event){
     new_socket = accept(event->data.fd, NULL, NULL);
     debug("new connection bound to socket: %d\n", new_socket);
     struct epoll_event conn_event = create_epoll_in_event(new_socket);
-
     rc = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_socket, &conn_event);
     check(rc != -1, "Failed to add file descriptor to epoll");
+    self->connected_domain_socket = new_socket;
 
     error:
+        log_warn("Failed to handle domain socket connection");
         return;
 }
 
@@ -96,8 +98,8 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
     }else if (received_header.tra == 3){
         debug("Request is transport type request");
         char *ping = "PING!";
-        rc = write(self->domain_socket, ping, strlen(ping));
-        check(rc != -1, "Failed to write received message to domain socket: %d", self->domain_socket);
+        rc = write(self->connected_domain_socket, ping, strlen(ping));
+        check(rc != -1, "Failed to write received message to domain socket: %d", self->connected_domain_socket);
     }
 
     if(e_frame_response)free(e_frame_response);
@@ -181,8 +183,8 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
             
 
             // Event on the listening local domain socket, should only be for new connections
-            if(events[i].data.fd == self->domain_socket){
-                handle_domain_socket_connection(epoll_fd, &events[i]);
+            if(events[i].data.fd == self->listening_domain_socket){
+                handle_domain_socket_connection(self, epoll_fd, &events[i]);
                 continue;
             }
 
