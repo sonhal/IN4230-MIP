@@ -70,11 +70,12 @@ int main(int argc, char *argv[]){
         if(event_n == 0){
             log_info("Ping server polling...");
          }else {
-            rc = read(so, buffer, strlen(buffer));
+            rc = read(so, buffer, 256);
             check(rc != -1, "Failed to read repsonse from mipd");
             log_info("pong server received from mipd: %s", buffer);
-            rc = write(so, pong_message, strlen(pong_message));
+            rc = write(so, buffer, rc);
         }
+        memset(buffer, 0, 256);
     }
     
 
