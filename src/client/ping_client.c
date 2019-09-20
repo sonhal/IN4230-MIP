@@ -76,8 +76,6 @@ int main(int argc, char *argv[]){
         printf("received from mipd: %s", buffer);
     }
 
-
-
     close(so);
 
     error:
