@@ -17,7 +17,7 @@
 
 #define MAX_READ 1600
 #define MAX_EVENTS 5
-#define MAX_STR_BUF 
+#define MAX_STR_BUF 64
 
 void startup();
 int setup_epoll(struct epoll_event events_to_handle[], int event_num);
@@ -41,8 +41,7 @@ int fetch_mip_addresses(int argc, char *argv[], int offset, uint8_t *mip_address
         return -1;
 }
 
-int handle_cli_inputs(int argc, char *argv[], int *is_debug, uint8_t *mip_addresses[], int address_n){
-    char *socket_name;
+int handle_cli_inputs(int argc, char *argv[], char *socket_name, int *is_debug, uint8_t *mip_addresses[], int address_n){
     int offset = 1;
     char *first_arg = argv[1];
     if(!strncmp(first_arg, "-h", 2)){
@@ -50,11 +49,13 @@ int handle_cli_inputs(int argc, char *argv[], int *is_debug, uint8_t *mip_addres
     }
     if (!strncmp(first_arg, "-d", 2)){
         // debug mode
+        log_info("DEBUG MODE ACTIVATE");
         is_debug = 1;
         offset++;
-        socket_name = argv[2];
+        strncpy(socket_name, argv[2], 64);
+        debug("sockname used %s", socket_name);
     }else{
-        socket_name = argv[1];
+        strncpy(socket_name, argv[1], 64);
     }
     return fetch_mip_addresses(argc, argv, offset, mip_addresses, address_n);
 }
@@ -77,9 +78,8 @@ int bind_table_to_raw_sockets(struct interface_table *table){
 }
 
 
-
 int main(int argc, char *argv[]){
-    char *socket_name = argv[1];
+    char *socket_name = calloc(1, 64);
     int local_socket = 0;
     int raw_socket = 0;
     int rc = 0;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]){
     uint8_t mip_addresses[i_table->size];
     
     check(argc > 1, "mipd [-h] [-d] <socket_application> [MIP addresses ...]");
-    num_mip_addresses_args = handle_cli_inputs(argc, argv, is_debug, mip_addresses, i_table->size);
+    num_mip_addresses_args = handle_cli_inputs(argc, argv, socket_name, is_debug, mip_addresses, i_table->size);
     check(num_mip_addresses_args != -1, "Exiting...");
     debug("Num addresses: %d", num_mip_addresses_args);
     startup();
@@ -134,6 +134,7 @@ int main(int argc, char *argv[]){
     unlink(so_name.sun_path);
     close(local_socket);
     close(raw_socket);
+    free(socket_name);
     return 0;
 
     error:
@@ -142,6 +143,7 @@ int main(int argc, char *argv[]){
         unlink(so_name.sun_path);
         close(local_socket);
         close(raw_socket);
+        free(socket_name);
         return -1;
 }
 
