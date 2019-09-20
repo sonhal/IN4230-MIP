@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "../dbg.h"
+
 #include <sys/socket.h>
 #include <linux/if_packet.h>	/* AF_PACKET */
 #include <net/ethernet.h>	/* ETH_* */
@@ -11,7 +11,7 @@
 #include <sys/un.h>		/* struct sockaddr_un */
 #include <sys/epoll.h> 
 
-
+#include "../dbg.h"
 #include "polling.h"
 
 
@@ -21,13 +21,20 @@ Ping server program. Connects to the mipd daemon trough the provided domain sock
 
 int main(int argc, char *argv[]){
     char *pong_message = "PONG";
+    char *first_arg = argv[1];
 
-    if(!strncmp("-h", argv[1], 2)){
-        printf("ping_server [-h] <socket_application>");
+    if(argc < 2){
+        printf("ping_server [-h] <socket_application>\n");
+        return -1;
     }
 
-    check(argc == 2, "ping_server [-h] <socket_application>");
-    printf("Started Ping server");
+    if(!strncmp("-h", argv[1], 2)){
+        printf("ping_server [-h] <socket_application>\n");
+        return 1;
+    }
+
+    check(argc == 2, "ping_server [-h] <socket_application>\n");
+    log_info("Started Ping server");
 
     int rc = 0;
     char buffer[256];
@@ -56,16 +63,16 @@ int main(int argc, char *argv[]){
     int event_n = 0;
     struct epoll_event events_buf[5];
 
-    printf("Ping server up and polling");
+    log_info("Ping server up and polling");
     while (1)
     {
         event_n = epoll_wait(epoll_fd, &events_buf, 5, 30000);
         if(event_n == 0){
-            printf("Ping server polling...");
+            log_info("Ping server polling...");
          }else {
             rc = read(so, buffer, strlen(buffer));
             check(rc != -1, "Failed to read repsonse from mipd");
-            printf("pong server received from mipd: %s", buffer);
+            log_info("pong server received from mipd: %s", buffer);
             rc = write(so, pong_message, strlen(pong_message));
         }
     }

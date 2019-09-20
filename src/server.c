@@ -94,7 +94,7 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
     }else if (received_header.tra == 0){
         append_to_cache(self->cache, event->data.fd, received_header.src_addr, received_so_name.sll_addr);
     }else if (received_header.tra == 3){
-        debug("Request is transport type requesst");
+        debug("Request is transport type request");
         char *ping = "PING!";
         rc = write(self->domain_socket, ping, strlen(ping));
         check(rc != -1, "Failed to write received message to domain socket: %d", self->domain_socket);
