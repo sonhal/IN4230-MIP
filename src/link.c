@@ -206,7 +206,6 @@ int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame 
     msg = calloc(1, sizeof(struct msghdr));
 
     /* Fill out message metadata struct */
-    memcpy(so_name->sll_addr, frame_hdr->dst_addr, MAC_ADDRESS_SIZE);
     msg->msg_name = so_name;
     msg->msg_namelen = sizeof(struct sockaddr_ll);
     msg->msg_iovlen = 2;
