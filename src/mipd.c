@@ -23,7 +23,7 @@ void startup();
 int setup_epoll(struct epoll_event events_to_handle[], int event_num);
 
 int fetch_mip_addresses(int argc, char *argv[], int offset, uint8_t *mip_addresses[], int address_n){
-    check((argc - offset) < address_n, "To many mip addresses provided - max: %d", address_n);
+    check((argc - offset - 1) <= address_n, "To many mip addresses provided - max: %d", address_n);
     check((argc - offset) > 0, "To few mip addresses provided - min: 1, %d where provided", (argc - offset));
 
     int  i = 0;
