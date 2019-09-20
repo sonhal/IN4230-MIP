@@ -19,7 +19,6 @@
 extern void DumpHex(const void* data, size_t size);
 
 
-
 void destroy_server_self(struct server_self *self){
     free(self->cache);
     free(self->i_table);
@@ -88,13 +87,11 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
 
     if(e_frame_response)free(e_frame_response);
     if(mip_header_response)free(mip_header_response);
-    if(sock_name)free(sock_name);
     return 1;
 
     error:
         if(e_frame_response)free(e_frame_response);
         if(mip_header_response)free(mip_header_response);
-        if(sock_name)free(sock_name);
         return -1;
 }
 
