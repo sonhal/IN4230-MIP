@@ -130,7 +130,7 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
 
 
     // Create headers for the message
-    struct ether_frame *e_frame = create_transport_ethernet_frame(sock_name->sll_addr, self->cache->entries[cache_pos].dst_interface);
+    struct ether_frame *e_frame = create_ethernet_frame(self->cache->entries[cache_pos].dst_interface, sock_name);
     struct mip_header *m_header = create_transport_package(src_mip_addr, mip_address);
 
     // Send the message
@@ -138,10 +138,14 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     check(rc != -1, "Failed to send transport packet");
 
     free(message);
+    free(e_frame);
+    free(m_header);
     return 0;
 
     error:
         free(message);
+        free(e_frame);
+        free(m_header);
         return -1;
 }
 
