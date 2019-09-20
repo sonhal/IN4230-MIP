@@ -75,11 +75,12 @@ int main(int argc, char *argv[]){
                 rc = read(so, buffer, 256);
                 check(rc != -1, "Failed to read repsonse from mipd");
                 log_info("RECEIVED: %s", buffer);
+                log_info("Sending to mipd: %s", buffer);
+                rc = write(so, buffer, strlen(buffer));
+                check(rc != -1, "Failed to write to mipd");
             } while (rc > 0);
 
-            log_info("Sending to mipd: %s", buffer);
-            rc = write(so, buffer, strlen(buffer));
-            check(rc != -1, "Failed to write to mipd");
+
         }
         memset(buffer, 0, 256);
     }
