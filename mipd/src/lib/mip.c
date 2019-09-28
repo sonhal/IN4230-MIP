@@ -2,7 +2,7 @@
 #include <stdio.h> 		/* printf */
 #include <string.h>		/* memset */
 #include <stdint.h>
-#include "dbg.h"
+#include "../../../commons/src/dbg.h"
 #include "mip.h"
 
 

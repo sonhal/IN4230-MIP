@@ -11,8 +11,8 @@
 #include <sys/un.h>		/* struct sockaddr_un */
 #include <sys/epoll.h> 
 
-#include "../dbg.h"
-#include "polling.h"
+#include "../../commons/src/polling.h"
+#include "../../commons/src/dbg.h"
 
 
 /*

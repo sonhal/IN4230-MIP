@@ -8,12 +8,12 @@
 #include <stdlib.h> 		/* malloc */
 
 
-#include "polling.h"
-#include "app_connection.h"
-#include "link.h"
-#include "interface.h"
-#include "server.h"
-#include "dbg.h"
+#include "../../../commons/src/polling.h"
+#include "../lib/app_connection.h"
+#include "../lib/link.h"
+#include "../lib/interface.h"
+#include "../lib/server.h"
+#include "../../../commons/src/dbg.h"
 
 #define MAX_READ 1600
 #define MAX_EVENTS 5

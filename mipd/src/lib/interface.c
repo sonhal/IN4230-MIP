@@ -7,9 +7,11 @@
 #include <string.h>
 #include <arpa/inet.h>		/* htons */
 #include <ifaddrs.h>		/* getifaddrs */
+#include <sys/epoll.h> 
 
 #include "interface.h"
-#include "dbg.h"
+#include "../../../commons/src/polling.h"
+#include "../../../commons/src/dbg.h"
 
 #define INTERFACE_BUFF_SIZE 10
 
@@ -217,4 +219,20 @@ char *macaddr_str_for_int_buff(char address[]){
         free(buf);
     }
     return macaddr;
+}
+
+int add_to_table_to_epoll(int fd, struct interface_table *table){
+    int rc = 0;
+    int i = 0;
+    int socket = 0;
+    for(i = 0; i < table->size; i++){
+        socket = table->interfaces[i].raw_socket;
+        struct epoll_event i_event = create_epoll_in_event(socket);
+        rc = epoll_ctl(fd, EPOLL_CTL_ADD, socket, &i_event);
+        check(rc != -1, "Failed to add file descriptor: %d to epoll", socket);
+    }
+    return 0;
+
+    error:
+        return -1;
 }

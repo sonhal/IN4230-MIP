@@ -1,12 +1,16 @@
 #include <unistd.h>		/* read, close, unlink */
-#include "../src/dbg.h"
+#include "../../commons/src/dbg.h"
 #include "minunit.h"
 
+#include <sys/socket.h>
+#include <unistd.h> 
+#include <stdio.h> 
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdlib.h> 
+#include <netinet/in.h> 
 
-
-#include "../src/interface.c"
-
-
+#include "../src/lib/interface.h"
 
 char *test_create_interface_table(){
     struct interface_table *table = create_interface_table();

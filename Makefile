@@ -4,43 +4,22 @@ LIBS=-ldl $(OPTLIBS)
 
 PREFIX?=/usr/local
 
-SOURCES=$(wildcard src/**/*.c src/*.c )
-SOURCES := $(filter-out src/client/ping_client.c src/server/ping_server.c , $(SOURCES))
-OBJECTS=$(patsubst %.c,%.o, $(SOURCES))
+COMMONS_DIR=commons/
+MIPD_DIR=mipd/
+PING_CLIENT_DIR=ping-client/
+PING_SERVER_DIR=ping-server/
 
-TEST_SRC=$(wildcard tests/*_tests.c)
-TESTS=$(patsubst %.c,%,$(TEST_SRC))
+all: build
+	$(MAKE) -C $(COMMONS_DIR)
+	$(MAKE) -C $(MIPD_DIR)
+	$(MAKE) -C $(PING_CLIENT_DIR)
+	$(MAKE) -C $(PING_SERVER_DIR)
 
-TARGET=bin/mipd
-
-CLIENT=bin/ping_client
-CLIENT_SRC=$(wildcard src/**/*.c src/*.c )
-CLIENT_SRC := $(filter-out src/mipd.c src/server/ping_server.c, $(CLIENT_SRC))
-
-SERVER=bin/ping_server
-SERVER_SRC=$(wildcard src/**/*.c src/*.c )
-SERVER_SRC := $(filter-out src/mipd.c src/client/ping_client.c, $(SERVER_SRC))
-#TARGET=build/mip.a
-#SO_TARGET=$(patsubst %.a,%.so,$(TARGET))
-
-# The Target Build
-all: $(TARGET) $(CLIENT) $(SERVER)
-
-dev: CFLAGS=-g -Wall -Isrc -Wall -Wextra $(OPTFLAGS)
-
-dev: all
-
-$(TARGET): build $(OBJECTS)
-	cc $(CFLAGS) -o $(TARGET) $(SOURCES)
-	chmod +x $(TARGET)
-
-$(CLIENT): 
-	cc $(CFLAGS) -o $(CLIENT) $(CLIENT_SRC)
-	chmod +x $(CLIENT)
-
-$(SERVER): 
-	cc $(CFLAGS) -o $(SERVER) $(SERVER_SRC)
-	chmod +x $(SERVER)
+dev: build
+	$(MAKE) dev -C $(COMMONS_DIR)
+	$(MAKE) dev -C $(MIPD_DIR)
+	$(MAKE) dev -C $(PING_CLIENT_DIR)
+	$(MAKE) dev -C $(PING_SERVER_DIR)
 
 build:
 	@mkdir -p build
@@ -56,7 +35,10 @@ tests: $(TESTS)
 # The Cleaner 
 
 clean:
-	rm -rf bin build $(OBJECTS) $(TESTS)
-	rm -f tests/tests.log
+	rm -rf bin build
+	$(MAKE) clean -C $(COMMONS_DIR)
+	$(MAKE) clean -C $(MIPD_DIR)
+	$(MAKE) clean -C $(PING_CLIENT_DIR)
+	$(MAKE) clean -C $(PING_SERVER_DIR)
 	find . -name "*.gc*" -exec rm {} \;
 	rm -rf `find . -name "*.dSYM" -print`

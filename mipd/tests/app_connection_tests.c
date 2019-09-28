@@ -1,9 +1,19 @@
 #include <unistd.h>		/* read, close, unlink */
+#include <sys/socket.h>
+#include <unistd.h> 
+#include <stdio.h> 
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdlib.h> 
+#include <netinet/in.h> 
+#include <sys/socket.h>
+#include <sys/un.h>
 
-#include "../src/dbg.h"
+
+#include "../../commons/src/dbg.h"
 #include "minunit.h"
 
-#include "../src/app_connection.c"
+#include "../src/lib/app_connection.h"
 
 char *test_create_domain_socket(){
     int so = 1;

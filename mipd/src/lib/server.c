@@ -8,14 +8,13 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-
-#include "dbg.h"
+#include "../../../commons/src/polling.h"
+#include "../../../commons/src/dbg.h"
 #include "app_connection.h"
 #include "link.h"
 #include "mip_arp.h"
 #include "mip.h"
 #include "interface.h"
-#include "polling.h"
 #include "server.h"
 
 #define INTERFACE_BUF_SIZE 10;
@@ -81,10 +80,6 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
 
     rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_so_name, &received_header);
     check(rc != -1, "Failed to receive from raw socket");
-
-
-    debug("%d bytes read\nRAW SOCKET Frame:\n", rc);
-    debug("From RAW socket: %s\n", read_buffer);
 
     int i_pos = get_interface_pos_for_socket(self->i_table, event->data.fd);
     debug("position found for socket: %d", i_pos);

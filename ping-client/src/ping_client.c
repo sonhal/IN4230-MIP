@@ -1,7 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "../dbg.h"
 #include <sys/socket.h>
 #include <linux/if_packet.h>	/* AF_PACKET */
 #include <net/ethernet.h>	/* ETH_* */
@@ -12,8 +11,8 @@
 #include <sys/epoll.h> 
 
 
-#include "polling.h"
-
+#include "../../commons/src/polling.h"
+#include "../../commons/src/dbg.h"
 
 /*
 Client program. Connects to the mipd daemon trough the provided domain socket.
@@ -22,16 +21,21 @@ Send the provided message and waits for answere for 1 second using epoll beforin
 
 int main(int argc, char *argv[]){
 
-    if(!strncmp("-h", argv[1], 2)){
-        printf("ping_client [-h] <destination_host> <message> <socket_application>");
-    }
-
-    check(argc == 4, "ping_client [-h] <destination_host> <message> <socket_application>");
-
     int rc = 0;
     char buffer[256];
     int so = 0;
 
+    if(argc < 2){
+        printf("ERROR: ping clients needs arguments\nping_client [-h] <destination_host> <message> <socket_application>\n");
+        return 1;
+    } 
+
+    if(!strncmp("-h", argv[1], 2)){
+        printf("ping_client [-h] <destination_host> <message> <socket_application>");
+        return 1;
+    }
+
+    check(argc == 4, "ping_client [-h] <destination_host> <message> <socket_application>");
 
     strncpy(&buffer, argv[1], sizeof(char) * 3);
     strcat(&buffer, " ");

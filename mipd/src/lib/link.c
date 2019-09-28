@@ -8,7 +8,7 @@
 #include <ifaddrs.h>		/* getifaddrs */
 
 #include "interface.h"
-#include "dbg.h"
+#include "../../../commons/src/dbg.h"
 #include "mip.h"
 #include "link.h"
 

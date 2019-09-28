@@ -1,10 +1,9 @@
 #include <unistd.h>		/* read, close, unlink */
 
-#include "../src/dbg.h"
+#include "../../commons/src/dbg.h"
 #include "minunit.h"
 
-#include "../src/mip.c"
-
+#include "../src/lib/mip.h"
 
 
 char *test_create_mip_arp_packet(){

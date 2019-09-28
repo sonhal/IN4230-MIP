@@ -1,10 +1,10 @@
 #include <unistd.h>		/* read, close, unlink */
-#include "../src/dbg.h"
+#include <stdint.h>
+
+#include "../../commons/src/dbg.h"
 #include "minunit.h"
 
-
-#include "../src/mip_arp.c"
-
+#include "../src/lib/mip_arp.h"
 
 
 char *test_create_cache(){

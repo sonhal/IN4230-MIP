@@ -1,11 +1,17 @@
-#include <unistd.h>		/* read, close, unlink */
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/epoll.h> 
+#include <linux/if_packet.h>
+#include <net/ethernet.h>
+#include <arpa/inet.h>
 
-#include "../src/dbg.h"
+#include "../../commons/src/dbg.h"
 #include "minunit.h"
 
-#include "../src/link.c"
-#include "../src/DumpHex.c"
-#include "../src/polling.c"
+#include "../src/polling.h"
+
 
 
 void test_func(int i){

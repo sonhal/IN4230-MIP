@@ -11,8 +11,6 @@ jobs:
     - uses: actions/checkout@v1
     - name: make
       run: make dev
-    - name: make tests
-      run: make tests
     - name: deploy
       env: # Or as an environment variable
         SSH_KEY: ${{ secrets.VM_SSH_KEY }}

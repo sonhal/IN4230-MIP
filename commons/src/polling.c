@@ -7,17 +7,8 @@
 #include <net/ethernet.h>
 #include <arpa/inet.h>
 #include "dbg.h"
-#include "link.h"
-#include "mip_arp.h"
-#include "mip.h"
-#include "interface.h"
 
-
-struct event_handler
-{
-    int fd;
-    void (*handler_func)(int);
-};
+#include "polling.h"
 
 
 struct epoll_event create_epoll_in_event(int fd){
@@ -54,19 +45,5 @@ int setup_epoll(struct epoll_event events_to_handle[], int event_num){
 
 }
 
-int add_to_table_to_epoll(int fd, struct interface_table *table){
-    int rc = 0;
-    int i = 0;
-    int socket = 0;
-    for(i = 0; i < table->size; i++){
-        socket = table->interfaces[i].raw_socket;
-        struct epoll_event i_event = create_epoll_in_event(socket);
-        rc = epoll_ctl(fd, EPOLL_CTL_ADD, socket, &i_event);
-        check(rc != -1, "Failed to add file descriptor: %d to epoll", socket);
-    }
-    return 1;
 
-    error:
-        return -1;
-}
 

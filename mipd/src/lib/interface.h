@@ -50,3 +50,5 @@ char *macaddr_str(struct sockaddr_ll *sa);
 char *macaddr_str_for_int_buff(char address[]);
 
 int close_open_sockets_on_table_interface(struct interface_table *table);
+
+int add_to_table_to_epoll(int fd, struct interface_table *table);
