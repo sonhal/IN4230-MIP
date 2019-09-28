@@ -8,6 +8,11 @@ struct server_self {
     int debug_enabled;
 };
 
+ #define server_log(SELF, M, ...) if((SELF->debug_enabled)) printf(\
+    "[SERVER LOG]" M "\n", ##__VA_ARGS__)
+
+ #define server_log_received_packet(SELF, HEADER) server_log(SELF, \
+    "[PACKAGE RECEIVED] from mip_addr: %d\t tra: %d\tpayload length: %d\n", (HEADER)->src_addr, (HEADER)->tra, (HEADER)->payload_len)
 
 void destroy_server_self(struct server_self *self);
 

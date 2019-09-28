@@ -6,7 +6,7 @@
 #include <string.h>
 #include <sys/socket.h>		/* socket, bind, listen, accept */
 #include <stdlib.h> 		/* malloc */
-
+#include <stdint.h>
 
 #include "../../../commons/src/polling.h"
 #include "../lib/app_connection.h"
@@ -14,51 +14,16 @@
 #include "../lib/interface.h"
 #include "../lib/server.h"
 #include "../../../commons/src/dbg.h"
+#include "cli.h"
 
 #define MAX_READ 1600
 #define MAX_EVENTS 5
 #define MAX_STR_BUF 64
 
+
 void startup();
 int setup_epoll(struct epoll_event events_to_handle[], int event_num);
 
-int fetch_mip_addresses(int argc, char *argv[], int offset, uint8_t *mip_addresses[], int address_n){
-    check((argc - offset - 1) <= address_n, "To many mip addresses provided - max: %d", address_n);
-    check((argc - offset) > 0, "To few mip addresses provided - min: 1, %d where provided", (argc - offset));
-
-    int  i = 0;
-    int k = 0;
-    for ( i = offset +1; i < argc; i++){
-        int new_mip_addr = atoi(argv[i]);
-        check(new_mip_addr < 256, "MIP address value provided is to large, max: 255");
-        debug("mip index %d, set to %d", k, new_mip_addr);
-        mip_addresses[k] = new_mip_addr;
-        k++;
-    }
-    return k;
-
-    error:
-        return -1;
-}
-
-int handle_cli_inputs(int argc, char *argv[], char *socket_name, int *is_debug, uint8_t *mip_addresses[], int address_n){
-    int offset = 1;
-    char *first_arg = argv[1];
-    if(!strncmp(first_arg, "-h", 2)){
-        printf("help: mipd [-h] [-d] <socket_application> [MIP addresses ...]\n");
-    }
-    if (!strncmp(first_arg, "-d", 2)){
-        // debug mode
-        log_info("DEBUG MODE ACTIVATE");
-        is_debug = 1;
-        offset++;
-        strncpy(socket_name, argv[2], 64);
-        debug("sockname used %s", socket_name);
-    }else{
-        strncpy(socket_name, argv[1], 64);
-    }
-    return fetch_mip_addresses(argc, argv, offset, mip_addresses, address_n);
-}
 
 int bind_table_to_raw_sockets(struct interface_table *table){
     int rc = 0;
@@ -79,36 +44,35 @@ int bind_table_to_raw_sockets(struct interface_table *table){
 
 
 int main(int argc, char *argv[]){
-    char *socket_name = calloc(1, 64);
     int local_socket = 0;
     int raw_socket = 0;
     int rc = 0;
     int epoll_fd = 0;
     struct sockaddr_un so_name;
-    int num_mip_addresses_args = 0;
-    int is_debug = 0;
     struct interface_table *i_table = create_loaded_interface_table();
-    uint8_t mip_addresses[i_table->size];
+    struct user_config *u_config;
     
     check(argc > 1, "mipd [-h] [-d] <socket_application> [MIP addresses ...]");
-    num_mip_addresses_args = handle_cli_inputs(argc, argv, socket_name, is_debug, mip_addresses, i_table->size);
-    check(num_mip_addresses_args != -1, "Exiting...");
-    debug("Num addresses: %d", num_mip_addresses_args);
+    if(!strncmp(argv[1], "-h", 2)){
+        printf("help: mipd [-h] [-d] <socket_application> [MIP addresses ...]\n");
+        return 0;
+    }
+
+    // Parse and use user provided configurations
+    u_config = handle_user_config(argc, argv, i_table->size);
+    check(u_config != NULL, "Exiting...");
+    i_table = apply_mip_addresses(i_table, u_config->mip_addresses, u_config->num_mip_addresses);
+    local_socket = setup_domain_socket(&so_name, u_config->app_socket, strnlen(u_config->app_socket, 256));
+    check(local_socket != -1, "Failed to create local socket");
+
     startup();
 
-    i_table = apply_mip_addresses(i_table, mip_addresses, num_mip_addresses_args);
     rc = bind_table_to_raw_sockets(i_table);
     check(rc != -1, "Failed to setup raw sockets for interfaces");
     printf("Daemon interface table setup\n");
     print_interface_table(i_table);
 
-    //int rc = handle_poll();
-    //check(rc != -1, "epolling exited unexpectedly");
 
-
-    
-    local_socket = setup_domain_socket(&so_name, socket_name, strnlen(socket_name, 256));
-    check(local_socket != -1, "Failed to create local socket");
     raw_socket = setup_raw_socket();
     check(raw_socket != -1, "Failed to create raw socket");
 
@@ -120,12 +84,11 @@ int main(int argc, char *argv[]){
     rc = add_to_table_to_epoll(epoll_fd, i_table);
     check(rc != -1, "Failed to add interfaces to epoll");
 
-    struct server_self *server = init_server_self(local_socket, i_table, is_debug);
+    struct server_self *server = init_server_self(local_socket, i_table, u_config->is_debug);
     // MAIN application loop
     struct epoll_event events[MAX_EVENTS];
     rc = start_server(server, epoll_fd, &events, MAX_EVENTS, MAX_READ, 30000);
-    //rc = epoll_loop(epoll_fd, local_socket, raw_socket, events, MAX_EVENTS, MAX_READ, 30000);
-    //check(rc != -1, "epoll loop exited unexpectedly");
+    check(rc != -1, "epoll loop exited unexpectedly");
 
     // Cleanup
     close_open_sockets_on_table_interface(i_table);
@@ -134,7 +97,7 @@ int main(int argc, char *argv[]){
     unlink(so_name.sun_path);
     close(local_socket);
     close(raw_socket);
-    free(socket_name);
+    destroy_user_config(u_config);
     return 0;
 
     error:
@@ -143,7 +106,7 @@ int main(int argc, char *argv[]){
         unlink(so_name.sun_path);
         close(local_socket);
         close(raw_socket);
-        free(socket_name);
+        destroy_user_config(u_config);
         return -1;
 }
 

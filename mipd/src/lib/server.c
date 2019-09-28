@@ -40,19 +40,13 @@ struct server_self *init_server_self(int listening_domain_socket, struct interfa
     return self;
 }
 
-void server_log(struct server_self *self, struct mip_header *header){
-    if(self->debug_enabled){
-        printf("[PACKAGE RECEIVED] from mip_addr: %d\t tra: %d\tpayload length: %d", header->src_addr, header->tra, header->payload_len);
-    }
-}
-
 void handle_domain_socket_connection(struct server_self *self, int epoll_fd, struct epoll_event *event){
     int rc = 0;
 
-    debug("DOMAIN SOCKET ACTION!");
+    server_log(self, "Received message on domain socket");
     int new_socket = 0;
     new_socket = accept(event->data.fd, NULL, NULL);
-    debug("new connection bound to socket: %d\n", new_socket);
+    server_log(self, "new connection bound to socket: %d", new_socket);
     struct epoll_event conn_event = create_epoll_in_event(new_socket);
     rc = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_socket, &conn_event);
     check(rc != -1, "Failed to add file descriptor to epoll");
@@ -63,8 +57,8 @@ void handle_domain_socket_connection(struct server_self *self, int epoll_fd, str
         return;
 }
 
-void handle_domain_socket_disconnect(struct epoll_event *event){
-    printf("Client on socket: %d disconnected", event->data.fd);
+void handle_domain_socket_disconnect(struct server_self *self, struct epoll_event *event){
+    server_log(self, "Client on domain socket: %d disconnected", event->data.fd);
     close(event->data.fd);
 }
 
@@ -82,11 +76,11 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
     check(rc != -1, "Failed to receive from raw socket");
 
     int i_pos = get_interface_pos_for_socket(self->i_table, event->data.fd);
-    debug("position found for socket: %d", i_pos);
+    server_log(self, "position found for socket: %d", i_pos);
     int mip_addr = self->i_table->interfaces[i_pos].mip_address;
     sock_name = self->i_table->interfaces[i_pos].so_name;
 
-    server_log(self, &received_header);
+    server_log_received_packet(self, &received_header);
     if(received_header.tra == 1){
         debug("received header - src: %d\t dest: %d", received_header.src_addr, received_header.dst_addr);
 
@@ -183,7 +177,8 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
     check(rc != -1, "Failed to complete mip arp");
 
     while(running){
-        printf("Polling for input...\n");
+        printf("debug value: %d", self->debug_enabled);
+        server_log(self,"Polling...\n");
         event_count = epoll_wait(epoll_fd, events, event_num, timeout);
         log_info("%d ready events", event_count);
         int i = 0;
@@ -211,7 +206,7 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
             // The event is a domain socket client. And if the bytes read are 0 the client has disconnected
             if(bytes_read == 0){
                 printf("%zd bytes read\n", bytes_read);
-                handle_domain_socket_disconnect(&events[i]);
+                handle_domain_socket_disconnect(self, &events[i]);
                 continue;
             } else if(!strncmp(read_buffer, "stop\n", 5)){
                 running = 0;

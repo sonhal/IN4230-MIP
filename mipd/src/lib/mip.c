@@ -7,7 +7,7 @@
 
 
 // Returns heap allocated MIP header ready for ARP
-struct mip_header *create_arp_request_package(uint8_t src_addr){
+struct mip_header *create_arp_request_package(MIP_ADDRESS src_addr){
     struct mip_header *header;
     header = calloc(1, sizeof(struct mip_header));
     header->tra = 1;
@@ -20,7 +20,7 @@ struct mip_header *create_arp_request_package(uint8_t src_addr){
 }
 
 // Returns heap allocated MIP header ready for use as a response to a ARP request
-struct mip_header *create_arp_response_package(uint8_t src_addr, struct mip_header *arp_request){
+struct mip_header *create_arp_response_package(MIP_ADDRESS src_addr, struct mip_header *arp_request){
     struct mip_header *header;
     check(arp_request != NULL, "Invalid argument, arp_request was NULL");
     header = create_arp_request_package(src_addr);
@@ -35,7 +35,7 @@ struct mip_header *create_arp_response_package(uint8_t src_addr, struct mip_head
 
 
 // Returns a transport mip header
-struct mip_header *create_transport_package(uint8_t src_addr, uint8_t dest_addr){
+struct mip_header *create_transport_package(MIP_ADDRESS src_addr, MIP_ADDRESS dest_addr){
     struct mip_header *header;
     header = create_arp_request_package(src_addr);
     header->tra = 3;

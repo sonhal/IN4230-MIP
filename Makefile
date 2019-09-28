@@ -21,6 +21,21 @@ dev: build
 	$(MAKE) dev -C $(PING_CLIENT_DIR)
 	$(MAKE) dev -C $(PING_SERVER_DIR)
 
+.PHONY: commons mipd ping-client ping-server
+
+commons: build
+	$(MAKE) -C $(COMMONS_DIR)
+
+mipd: build
+	$(MAKE) -C $(MIPD_DIR)
+
+ping-client: build
+	$(MAKE) -C $(PING_CLIENT_DIR)
+
+ping-server: build
+	$(MAKE) -C $(PING_SERVER_DIR)
+
+
 build:
 	@mkdir -p build
 	@mkdir -p bin
