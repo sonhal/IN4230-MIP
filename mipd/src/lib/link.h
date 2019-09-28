@@ -3,13 +3,7 @@
 #define _LINK_H
 #include <linux/if_packet.h>	/* AF_PACKET */
 #include "mip.h"
-
-struct ether_frame {
-    uint8_t dst_addr[6];
-    uint8_t src_addr[6];
-    uint8_t eth_proto[2];
-    uint8_t contents[0];
-} __attribute__((packed));
+#include "ether_frame.h"
 
 
 char *macaddr_str(struct sockaddr_ll *sa);
@@ -30,9 +24,4 @@ int setup_raw_socket();
 
 int complete_mip_arp(struct interface_table *table);
 
-struct ether_frame *create_response_ethernet_frame(struct ether_frame *request_ethernet);
-
-struct ether_frame *create_transport_ethernet_frame(uint8_t src[], uint8_t dest[]);
-
-struct ether_frame *create_ethernet_frame(int8_t *dest[], struct sockaddr_ll *so_name);
 #endif
