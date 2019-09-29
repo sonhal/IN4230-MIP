@@ -28,7 +28,7 @@ struct mip_packet *create_mip_packet(const struct ether_frame *e_frame, const st
         check(number_of_words_needed <= PAYLOAD_MAX_WORD_NUM, "Payload to large, cannot create MIP packet");  
         new_packet->message = calloc(number_of_words_needed, MIP_PAYLOAD_WORD);
         memcpy(new_packet->message, message, message_size);
-        new_packet->m_header.payload_len = 0;
+        new_packet->m_header.payload_len = number_of_words_needed;
     }
     
     return new_packet;
