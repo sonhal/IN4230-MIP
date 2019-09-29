@@ -8,14 +8,21 @@
 
 struct mip_packet *create_mip_packet(const struct ether_frame *e_frame, const struct mip_header *m_header, const char *message){
     int rc = 0;
-    size_t message_len = strlen(message);
-    check(message_len < PAYLOAD_MAX_SIZE, "Payload to large, cannot create MIP packet");
-
     struct mip_packet *new_packet = calloc(1, sizeof(struct mip_packet));
+    
     memcpy(&new_packet->e_frame, e_frame, sizeof(struct ether_frame));
     memcpy(&new_packet->m_header, m_header, sizeof(struct mip_header));
-    strncpy(new_packet->message, message, PAYLOAD_MAX_SIZE - 1);
-    new_packet->message[message_len] = '\0';
+    new_packet->m_header.payload_len = 0;
+    
+
+    if(message != NULL){
+        size_t message_len = strlen(message);
+        check(message_len < PAYLOAD_MAX_SIZE, "Payload to large, cannot create MIP packet");   
+        strncpy(new_packet->message, message, PAYLOAD_MAX_SIZE - 1); 
+        new_packet->message[message_len] = '\0';
+        new_packet->m_header.payload_len = message_len;
+    }
+    
     return new_packet;
 
     error:
