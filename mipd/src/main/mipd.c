@@ -62,7 +62,7 @@ int main(int argc, char *argv[]){
     u_config = handle_user_config(argc, argv, i_table->size);
     check(u_config != NULL, "Exiting...");
     i_table = apply_mip_addresses(i_table, u_config->mip_addresses, u_config->num_mip_addresses);
-    local_socket = setup_domain_socket(&so_name, u_config->app_socket, strnlen(u_config->app_socket, 256));
+    local_socket = setup_domain_socket(&so_name, u_config->app_socket, strnlen(u_config->app_socket, 255));
     check(local_socket != -1, "Failed to create local socket");
 
     startup();

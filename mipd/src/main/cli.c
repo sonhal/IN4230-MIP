@@ -46,7 +46,7 @@ struct user_config *handle_user_config(int argc, char *argv[], uint64_t n_interf
         offset++;
     }
     config->app_socket = calloc(1, strlen(argv[offset]) * sizeof(char) + 1);        
-    strncpy(config->app_socket, argv[2], strlen(argv[2]));
+    strncpy(config->app_socket, argv[offset], strlen(argv[offset]));
     rc = fetch_mip_addresses(argc, argv, offset, config->mip_addresses, n_interfaces);
     check(rc != -1, "Failed to fetch mip addresses");
     config->num_mip_addresses = rc;

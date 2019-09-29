@@ -118,13 +118,14 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
 int handle_domain_socket_request(struct server_self *self, int bytes_read, char *read_buffer){
     debug("%zd bytes read\nDomain socket read: %s", bytes_read, read_buffer);
     int rc = 0;
-    struct mip_header *m_header;
-    struct ether_frame *e_frame;
-    struct mip_packet *m_packet;
-    struct ping_message *p_message;
+    struct mip_header *m_header = NULL;
+    struct ether_frame *e_frame = NULL;
+    struct mip_packet *m_packet = NULL;
+    struct ping_message *p_message = NULL;
 
     // Parse message on domain socket
     p_message = parse_ping_request(read_buffer);
+    server_log(self, "ping message:\nsrc:%d\tdst:%d\tcontent:%s", p_message->src_mip_addr, p_message->dst_mip_addr, p_message->content);
 
     int sock = query_mip_address_src_socket(self->cache, p_message->dst_mip_addr);
     check(sock != -1, "could not lockate mip address in cache");
@@ -162,9 +163,9 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     return 0;
 
     error:
-        free(p_message);
-        free(e_frame);
-        free(m_header);
+        if(p_message)free(p_message);
+        if(e_frame)free(e_frame);
+        if(m_header)free(m_header);
         return -1;
 }
 

@@ -31,7 +31,7 @@ int main(int argc, char *argv[]){
     if(argc < 2){
         printf("ERROR: ping clients needs arguments\nping_client [-h] <destination_host> <message> <socket_application>\n");
         return 1;
-    } 
+    }
 
     if(!strncmp("-h", argv[1], 2)){
         printf("ping_client [-h] <destination_host> <message> <socket_application>");
@@ -39,7 +39,8 @@ int main(int argc, char *argv[]){
     }
     check(argc == 4, "ping_client [-h] <destination_host> <message> <socket_application>");
 
-    return sscanf(argv[1], "%d",  p_message->dst_mip_addr);
+    rc = sscanf(argv[1], "%d",  &p_message->dst_mip_addr);
+    check(rc != -1, "Failed to parse mip address arg");
     strcpy(p_message->content, argv[2]);
 
     struct sockaddr_un so_name;
@@ -59,8 +60,9 @@ int main(int argc, char *argv[]){
     strncpy(so_name.sun_path, argv[3], sizeof(so_name.sun_path) - 1);
 
     rc = connect(so, (const struct sockaddr*)&so_name, sizeof(struct sockaddr_un));
-    check(rc != -1, "Failed to connect to domain socket");
+    check(rc != -1, "Failed to connect to domain socket: %s",so_name.sun_path);
 
+    printf("ping message:\nsrc:%d\tdst:%d\tcontent:%s\n", p_message->src_mip_addr, p_message->dst_mip_addr, p_message->content);
     /* Write works on sockets as well as files: */
     rc = write(so, p_message, sizeof(struct ping_message));
 
@@ -81,9 +83,12 @@ int main(int argc, char *argv[]){
         printf("received from mipd: %s", buffer);
     }
 
+    free(p_message);
     close(so);
+    return 0;
 
     error:
+        free(p_message);
         if(so) close(so);
         return -1;
 }
