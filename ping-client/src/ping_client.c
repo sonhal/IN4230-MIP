@@ -13,6 +13,7 @@
 
 #include "../../commons/src/polling.h"
 #include "../../commons/src/dbg.h"
+#include "../../commons/src/application.h"
 
 /*
 Client program. Connects to the mipd daemon trough the provided domain socket.
@@ -23,6 +24,8 @@ int main(int argc, char *argv[]){
 
     int rc = 0;
     char buffer[256];
+    struct ping_message *p_message = calloc(1, sizeof(struct ping_message));
+
     int so = 0;
 
     if(argc < 2){
@@ -32,15 +35,12 @@ int main(int argc, char *argv[]){
 
     if(!strncmp("-h", argv[1], 2)){
         printf("ping_client [-h] <destination_host> <message> <socket_application>");
-        return 1;
+        return 0;
     }
-
     check(argc == 4, "ping_client [-h] <destination_host> <message> <socket_application>");
 
-    strncpy(&buffer, argv[1], sizeof(char) * 3);
-    strcat(&buffer, " ");
-    strcat(&buffer, argv[2]);
-    printf("message: %s\n", &buffer);
+    return sscanf(argv[1], "%d",  p_message->dst_mip_addr);
+    strcpy(p_message->content, argv[2]);
 
     struct sockaddr_un so_name;
   
@@ -60,8 +60,9 @@ int main(int argc, char *argv[]){
 
     rc = connect(so, (const struct sockaddr*)&so_name, sizeof(struct sockaddr_un));
     check(rc != -1, "Failed to connect to domain socket");
+
     /* Write works on sockets as well as files: */
-    rc = write(so, buffer, strlen(buffer));
+    rc = write(so, p_message, sizeof(struct ping_message));
 
     memset(&buffer, 0, 256);
     struct epoll_event so_event = create_epoll_in_event(so);

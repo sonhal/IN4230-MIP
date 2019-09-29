@@ -19,6 +19,8 @@ struct mip_packet
     BYTE *message;
 }__attribute__((packed));
 
+ #define mip_header_payload_length_in_bytes(MIP_PACKET) MIP_PACKET->m_header.payload_len * (sizeof(uint8_t) * 4)
+
 struct mip_packet *create_mip_packet(const struct ether_frame *e_frame, const struct mip_header *m_header, const BYTE *message, size_t message_size);
 
 struct mip_packet *create_empty_mip_packet();

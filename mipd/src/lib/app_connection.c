@@ -10,6 +10,9 @@
 #include <arpa/inet.h>
 
 #include "../../../commons/src/dbg.h"
+#include "../../../commons/src/application.h"
+
+#include "packaging/mip_packet.h"
 
 #define BUF_SIZE 256
 
@@ -69,4 +72,10 @@ int parse_domain_socket_request(char *buffer, uint8_t *mip_addr, char *message){
     int i = 0;
     char *format = "%d %s";
     return sscanf(buffer, format, mip_addr, message);
+}
+
+struct ping_message *parse_ping_request(BYTE *buffer){
+    struct ping_message *request = calloc(1, sizeof(struct ping_message));
+    memcpy(request, buffer, sizeof(struct ping_message));
+    return request;
 }

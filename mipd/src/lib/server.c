@@ -55,6 +55,8 @@ void handle_domain_socket_connection(struct server_self *self, int epoll_fd, str
     check(rc != -1, "Failed to add file descriptor to epoll");
     self->connected_domain_socket = new_socket;
 
+    return;
+
     error:
         log_warn("Failed to handle domain socket connection");
         return;
@@ -99,8 +101,8 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         append_to_cache(self->cache, event->data.fd, received_packet->m_header.src_addr, active_interface_so_name->sll_addr);
     }else if (received_packet->m_header.tra == 3){
         debug("Request is transport type request");
-
-        rc = write(self->connected_domain_socket, received_packet->message, received_packet->m_header.payload_len);
+        
+        rc = write(self->connected_domain_socket, received_packet->message, mip_header_payload_length_in_bytes(received_packet));
         check(rc != -1, "Failed to write received message to domain socket: %d", self->connected_domain_socket);
     }
 
@@ -116,16 +118,15 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
 int handle_domain_socket_request(struct server_self *self, int bytes_read, char *read_buffer){
     debug("%zd bytes read\nDomain socket read: %s", bytes_read, read_buffer);
     int rc = 0;
-    uint8_t dest_mip_address;
     struct mip_header *m_header;
     struct ether_frame *e_frame;
     struct mip_packet *m_packet;
-    char *message = calloc(1, sizeof(char) * 64);
+    struct ping_message *p_message;
 
     // Parse message on domain socket
-    parse_domain_socket_request(read_buffer, &dest_mip_address, message);
+    p_message = parse_ping_request(read_buffer);
 
-    int sock = query_mip_address_src_socket(self->cache, dest_mip_address);
+    int sock = query_mip_address_src_socket(self->cache, p_message->dst_mip_addr);
     check(sock != -1, "could not lockate mip address in cache");
 
     int i_pos = get_interface_pos_for_socket(self->i_table, sock);
@@ -133,32 +134,35 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
 
     debug("position found for socket: %d", i_pos);
 
+    // set src mip address
     uint8_t src_mip_addr = self->i_table->interfaces[i_pos].mip_address;
+    p_message->src_mip_addr = src_mip_addr;
+
     struct sockaddr_ll *sock_name = self->i_table->interfaces[i_pos].so_name;
-    int cache_pos = query_mip_address_pos(self->cache, dest_mip_address);
+    int cache_pos = query_mip_address_pos(self->cache, p_message->dst_mip_addr);
     check(cache_pos != -1, "Could not locate cache pos");
 
 
     // Create headers for the message
     e_frame = create_ethernet_frame(self->cache->entries[cache_pos].dst_interface, sock_name);
     debug("src mip addr: %d", src_mip_addr);
-    debug("dest mip addr: %d", dest_mip_address);
-    m_header = create_transport_package(src_mip_addr, dest_mip_address);
+    debug("dest mip addr: %d", p_message->dst_mip_addr);
+    m_header = create_transport_package(src_mip_addr, p_message->dst_mip_addr);
 
     // Create MIP packet
-    m_packet = create_mip_packet(e_frame, m_header, message, strlen(message));
+    m_packet = create_mip_packet(e_frame, m_header, p_message, sizeof(p_message));
 
     // Send the message
     rc = sendto_raw_mip_packet(sock, sock_name, m_packet);
     check(rc != -1, "Failed to send transport packet");
 
-    free(message);
+    free(p_message);
     free(e_frame);
     free(m_header);
     return 0;
 
     error:
-        free(message);
+        free(p_message);
         free(e_frame);
         free(m_header);
         return -1;
