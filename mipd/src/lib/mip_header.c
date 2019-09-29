@@ -3,7 +3,7 @@
 #include <string.h>		/* memset */
 #include <stdint.h>
 #include "../../../commons/src/dbg.h"
-#include "mip.h"
+#include "mip_header.h"
 
 
 // Returns heap allocated MIP header ready for ARP

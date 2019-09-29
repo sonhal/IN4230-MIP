@@ -11,7 +11,7 @@
 #include "../../commons/src/dbg.h"
 #include "minunit.h"
 #include "../src/lib/link.h"
-#include "../src/lib/mip.h"
+#include "../src/lib/mip_header.h"
 #include "../src/lib/mip_packet.h"
 
 

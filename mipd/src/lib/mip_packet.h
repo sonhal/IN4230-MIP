@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #include "link.h"
-#include "mip.h"
+#include "mip_header.h"
 
 #define PAYLOAD_MAX_SIZE 1496
 

@@ -42,7 +42,7 @@ $(LIB_TARGET): build $(LIB_OBJECTS)
 
 build:
 	@mkdir -p build
-	@mkdir -p ../../bin
+	@mkdir -p ../bin
 
 # The Unit Tests
 .PHONY: tests

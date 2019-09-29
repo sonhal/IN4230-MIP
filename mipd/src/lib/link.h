@@ -2,7 +2,7 @@
 #ifndef _LINK_H
 #define _LINK_H
 #include <linux/if_packet.h>	/* AF_PACKET */
-#include "mip.h"
+#include "mip_header.h"
 #include "ether_frame.h"
 #include "mip_packet.h"
 

@@ -13,7 +13,7 @@
 #include "app_connection.h"
 #include "link.h"
 #include "mip_arp.h"
-#include "mip.h"
+#include "mip_header.h"
 #include "interface.h"
 #include "server.h"
 #include "mip_packet.h"
