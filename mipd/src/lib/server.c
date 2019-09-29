@@ -151,6 +151,7 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     m_header = create_transport_package(src_mip_addr, p_message->dst_mip_addr);
 
     // Create MIP packet
+    p_message->src_mip_addr = m_header->src_addr; // Sett src address in ping message so it can be PONG'ed
     m_packet = create_mip_packet(e_frame, m_header, p_message, sizeof(p_message));
 
     // Send the message
