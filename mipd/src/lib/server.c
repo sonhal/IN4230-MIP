@@ -10,6 +10,7 @@
 
 #include "../../../commons/src/polling.h"
 #include "../../../commons/src/dbg.h"
+#include "../../../commons/src/application.h"
 #include "app_connection.h"
 #include "link.h"
 #include "mip_arp.h"
@@ -90,7 +91,7 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
 
         response_e_frame = create_ethernet_frame(received_packet->e_frame.src_addr, &active_interface_so_name);
         response_m_header = create_arp_response_package(mip_addr, &received_packet->m_header);
-        response_m_packet = create_mip_packet(response_e_frame, response_m_header, '\0');
+        response_m_packet = create_mip_packet(response_e_frame, response_m_header, NULL, 0);
         rc = sendto_raw_mip_packet(event->data.fd, active_interface_so_name, response_m_packet);
         check(rc != -1, "Failed to send arp response package");
         append_to_cache(self->cache, event->data.fd, received_packet->m_header.src_addr, active_interface_so_name->sll_addr);
@@ -98,13 +99,8 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         append_to_cache(self->cache, event->data.fd, received_packet->m_header.src_addr, active_interface_so_name->sll_addr);
     }else if (received_packet->m_header.tra == 3){
         debug("Request is transport type request");
-        char ping_buff[20];
-        snprintf (ping_buff, sizeof(ping_buff), "%d", received_packet->m_header.src_addr);
-        char *ping = " PING";
-        strcat(ping_buff, ping);
 
-        debug("Sending this message to domain socket: %s", ping_buff);
-        rc = write(self->connected_domain_socket, ping, strlen(ping));
+        rc = write(self->connected_domain_socket, received_packet->message, received_packet->m_header.payload_len);
         check(rc != -1, "Failed to write received message to domain socket: %d", self->connected_domain_socket);
     }
 
@@ -150,7 +146,7 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     m_header = create_transport_package(src_mip_addr, dest_mip_address);
 
     // Create MIP packet
-    m_packet = create_mip_packet(e_frame, m_header, message);
+    m_packet = create_mip_packet(e_frame, m_header, message, strlen(message));
 
     // Send the message
     rc = sendto_raw_mip_packet(sock, sock_name, m_packet);

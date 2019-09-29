@@ -12,13 +12,13 @@
 #include <sys/epoll.h> 
 
 #include "../../commons/src/polling.h"
+#include "../../commons/src/application.h"
 #include "../../commons/src/dbg.h"
 
 
 /*
 Ping server program. Connects to the mipd daemon trough the provided domain socket.
 */
-
 int main(int argc, char *argv[]){
     char *pong_message = "PONG";
     char *first_arg = argv[1];
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]){
     log_info("Started Ping server");
 
     int rc = 0;
-    char *buffer = calloc(1, 256);
+    struct ping_message *request = calloc(1, sizeof(struct ping_message));
     int so = 0;
     struct sockaddr_un so_name;
   
@@ -72,17 +72,23 @@ int main(int argc, char *argv[]){
          }else {
             do
             {
-                rc = read(so, buffer, 256);
-                check(rc != -1, "Failed to read repsonse from mipd");
-                log_info("RECEIVED: %s", buffer);
-                log_info("Sending to mipd: %s", buffer);
-                rc = write(so, buffer, strlen(buffer));
+                rc = read(so, request, sizeof(struct ping_message));
+                check(rc != -1, "Failed to read response from mipd");
+                log_info("RECEIVED from MIP addr: %d", request->src_mip_addr);
+                log_info("Sending to mip addr: %s", request->src_mip_addr);
+
+                struct ping_message *response = calloc(1, sizeof(struct ping_message));
+                char *response_message = "PONG";
+                strncpy(response->content, response_message, strlen(response_message));
+                response->dst_mip_addr = request->src_mip_addr;
+
+                rc = write(so, response, sizeof(struct ping_message));
                 check(rc != -1, "Failed to write to mipd");
             } while (rc > 0);
 
 
         }
-        memset(buffer, 0, 256);
+        memset(request, 0, sizeof(struct ping_message));
     }
     
 

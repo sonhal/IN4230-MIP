@@ -57,8 +57,17 @@ int last_inteface(struct sockaddr_ll *so_name){
 int sendto_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct mip_packet *packet){
     int rc = 0;
 
+    //Create raw packet
+    int total_packet_size = 0;
+    int payload_len_in_bytes = packet->m_header.payload_len * MIP_PAYLOAD_WORD;
+    total_packet_size = (sizeof(struct mip_packet) + payload_len_in_bytes);
+    BYTE *raw_packet = calloc(total_packet_size, sizeof(BYTE));
+    memcpy(raw_packet, packet, sizeof(struct mip_packet));
+    memcpy(raw_packet[sizeof(struct mip_packet)], packet->message, payload_len_in_bytes);
+
+
     /* Send message */
-    rc = sendto(sd,packet, sizeof(struct mip_packet), 0, so_name, sizeof(struct sockaddr_ll));
+    rc = sendto(sd,raw_packet, total_packet_size, 0, so_name, sizeof(struct sockaddr_ll));
     check(rc != -1, "Failed to send mip package");
 
     destroy_mip_packet(packet);
@@ -71,8 +80,15 @@ int sendto_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct mip_packet
 
 int recv_raw_mip_packet(int sd, struct mip_packet *packet){
     int rc = 0;
+    BYTE *raw_packet = calloc(188, sizeof(BYTE));
 
-    rc = recv(sd, packet, sizeof(struct mip_packet), 0);
+    rc = recv(sd, raw_packet, 188, 0);
+
+    // Parse raw packet to mip_packet
+    memcpy(packet, raw_packet, sizeof(struct mip_packet));
+    int payload_len_in_bytes = packet->m_header.payload_len * MIP_PAYLOAD_WORD;
+    memcpy(packet->message, raw_packet[sizeof(struct mip_packet)], payload_len_in_bytes);
+
     check(rc != -1, "Failed to receive MIP packet");
     return rc;
 
@@ -110,7 +126,7 @@ int complete_mip_arp(struct interface_table *table){
 
         request_m_header = create_arp_request_package(mip_addr);
         request_e_frame = create_ethernet_frame(&broadcast_addr, &mac_addr);
-        request_m_packet = create_mip_packet(request_e_frame, request_m_header, '\0');
+        request_m_packet = create_mip_packet(request_e_frame, request_m_header, NULL, 0);
         rc = sendto_raw_mip_packet(socket, so_name, request_m_packet);
         check(rc != -1, "Failed to send arp package for interface");
     }
