@@ -20,4 +20,6 @@ struct mip_packet *create_mip_packet(const struct ether_frame *e_frame, const st
 struct mip_packet *create_empty_mip_packet();
 
 void destroy_mip_packet(struct mip_packet *packet);
+
+char *mip_packet_to_string(struct mip_packet *packet);
 #endif

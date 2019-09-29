@@ -42,3 +42,12 @@ struct mip_header *create_transport_package(MIP_ADDRESS src_addr, MIP_ADDRESS de
     header->dst_addr = dest_addr;
     return header;
 }
+
+char *mip_header_to_string(struct mip_header *m_header){
+    char *m_string = calloc(1, 256);
+
+    sprintf(m_string, "---- MIP header ----\ntra:\t%d\nttl:\t%d\npayload len:\t%d\ndst addres:\t%d\nsrc address:\t%d\n--------------------\n",
+            m_header->tra, m_header->ttl, m_header->payload_len, m_header->dst_addr, m_header->src_addr);
+
+    return m_string;
+}

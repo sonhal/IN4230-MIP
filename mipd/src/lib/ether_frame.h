@@ -20,4 +20,6 @@ struct ether_frame *create_response_ethernet_frame(struct ether_frame *request_e
 struct ether_frame *create_transport_ethernet_frame(uint8_t src[], uint8_t dest[]);
 
 struct ether_frame *create_ethernet_frame(int8_t *dest[], struct sockaddr_ll *so_name);
+
+char *ether_frame_to_string(struct ether_frame *e_frame);
 #endif

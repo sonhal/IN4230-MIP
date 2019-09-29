@@ -1,3 +1,4 @@
+#include <string.h>
 #include "ether_frame.h"
 
 
@@ -28,4 +29,51 @@ struct ether_frame *create_ethernet_frame(int8_t *dest[], struct sockaddr_ll *so
     frame->eth_proto[0] = 0x88;
     frame->eth_proto[1] = 0xB5;
     return frame;
+}
+
+char *ether_addr_str(int8_t mac_address[6]){
+    char *macaddr = calloc(6 * 2 + 6, sizeof(char));
+    
+    int i = 0;
+    for (i = 0; i < 6; i++){
+        char *buf = strdup(macaddr);
+
+        sprintf(macaddr, "%s%02hhx%s",
+                buf,
+                mac_address[i],
+                (i < 5) ? ":" : "");
+
+        free(buf);
+    }
+    return macaddr;
+}
+
+char *protocol_str(int8_t e_protocol[2]){
+    char *protocol = calloc(4, sizeof(char));
+    
+    int i = 0;
+    for (i = 0; i < 2; i++){
+        char *buf = strdup(protocol);
+
+        sprintf(protocol, "%s%02hhx",
+                buf,
+                e_protocol[i]);
+
+        free(buf);
+    }
+    return protocol;
+}
+
+char *ether_frame_to_string(struct ether_frame *e_frame){
+    char *e_string = calloc(1, 256);
+    char *src_str = ether_addr_str(e_frame->src_addr);
+    char *dst_str = ether_addr_str(e_frame->dst_addr);
+    char *e_prot_str = protocol_str(e_frame->eth_proto);
+    
+    sprintf(e_string, "---- Ethernet frame -----\nproto:\t%s\nsrc:\t%s\ndest:\t%s\n-------------------------\n",
+            e_prot_str, src_str, dst_str);
+    free(src_str);
+    free(dst_str);
+    free(e_prot_str);
+    return e_string;
 }

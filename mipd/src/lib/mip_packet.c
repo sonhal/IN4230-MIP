@@ -40,6 +40,18 @@ struct mip_packet *create_empty_mip_packet(){
     return packet;
 }
 
+char *mip_packet_to_string(struct mip_packet *packet){
+    char *m_p_string = calloc(256, sizeof(char));
+
+    char *e_frame_str = ether_frame_to_string(&packet->e_frame);
+    char *m_header_str = mip_header_to_string(&packet->m_header);
+
+    sprintf(m_p_string, "-------- MIP packet --------\n%s%s-------- MIP Packet END --------\n",
+            e_frame_str, m_header_str, packet->message);
+
+    return m_p_string;
+}
+
 void destroy_mip_packet(struct mip_packet *packet) {
     free(packet);
 }
