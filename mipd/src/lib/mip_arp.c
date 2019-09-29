@@ -3,7 +3,7 @@
 #include <stdio.h> 		/* printf */
 #include <string.h>		/* memset */
 #include "../../../commons/src/dbg.h"
-#include "mip_header.h"
+#include "packaging/mip_header.h"
 #include "link.h"
 #include "mip_arp.h"
 

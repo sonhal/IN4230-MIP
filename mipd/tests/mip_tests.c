@@ -3,7 +3,7 @@
 #include "../../commons/src/dbg.h"
 #include "minunit.h"
 
-#include "../src/lib/mip_header.h"
+#include "../src/lib/packaging/mip_header.h"
 
 
 char *test_create_mip_arp_packet(){

@@ -4,7 +4,7 @@
 #include "../../commons/src/dbg.h"
 #include "minunit.h"
 
-#include "../src/lib/mip_packet.h"
+#include "../src/lib/packaging/mip_packet.h"
 
 
 char *test_create_mip_packet(){

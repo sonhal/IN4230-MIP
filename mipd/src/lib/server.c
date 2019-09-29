@@ -13,10 +13,11 @@
 #include "app_connection.h"
 #include "link.h"
 #include "mip_arp.h"
-#include "mip_header.h"
+#include "packaging/mip_header.h"
+#include "packaging/mip_packet.h"
 #include "interface.h"
 #include "server.h"
-#include "mip_packet.h"
+
 
 #define INTERFACE_BUF_SIZE 10;
 #define MIP_MESSAGE_BUF 1600;

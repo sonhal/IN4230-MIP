@@ -12,7 +12,7 @@
 #include "interface.h"
 #include "../../../commons/src/polling.h"
 #include "../../../commons/src/dbg.h"
-#include "ether_frame.h"
+#include "packaging/ether_frame.h"
 
 
 #define INTERFACE_BUFF_SIZE 10

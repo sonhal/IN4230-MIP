@@ -10,7 +10,7 @@
 #include "interface.h"
 #include "../../../commons/src/dbg.h"
 #include "link.h"
-#include "mip_packet.h"
+#include "packaging/mip_packet.h"
 
 
 #define BUF_SIZE 1600

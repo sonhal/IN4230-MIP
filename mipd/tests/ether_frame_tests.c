@@ -9,7 +9,7 @@
 
 #include "../../commons/src/dbg.h"
 #include "minunit.h"
-#include "../src/lib/ether_frame.h"
+#include "../src/lib/packaging/ether_frame.h"
 #include "../src/lib/interface.h"
 
 

@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "../lib/mip_header.h"
+#include "../lib/packaging/mip_header.h"
 
 struct user_config {
     int is_debug;
