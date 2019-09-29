@@ -16,6 +16,7 @@
 #include "mip.h"
 #include "interface.h"
 #include "server.h"
+#include "mip_packet.h"
 
 #define INTERFACE_BUF_SIZE 10;
 #define MIP_MESSAGE_BUF 1600;
@@ -65,37 +66,37 @@ void handle_domain_socket_disconnect(struct server_self *self, struct epoll_even
 // returns MIP header tra which descripes the type of package received
 int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event, char *read_buffer, int read_buffer_size){
     int rc = 0;
-    struct mip_header received_header = {};
-    struct sockaddr_ll received_so_name = {};
-    struct ether_frame e_frame = {};
-    struct ether_frame *e_frame_response = NULL;
-    struct mip_header *mip_header_response = NULL;
-    struct socketaddr_ll *sock_name = NULL;
+    struct sockaddr_ll *active_interface_so_name;
+    struct mip_packet *received_packet = create_empty_mip_packet();
+    struct ether_frame *response_e_frame;
+    struct mip_header *response_m_header;
+    struct mip_packet *response_m_packet;
 
-    rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_so_name, &received_header);
+    rc = recv_raw_mip_packet(event->data.fd, received_packet);
+    //rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_so_name, &received_header);
     check(rc != -1, "Failed to receive from raw socket");
 
     int i_pos = get_interface_pos_for_socket(self->i_table, event->data.fd);
     server_log(self, "position found for socket: %d", i_pos);
     int mip_addr = self->i_table->interfaces[i_pos].mip_address;
-    sock_name = self->i_table->interfaces[i_pos].so_name;
+    active_interface_so_name = self->i_table->interfaces[i_pos].so_name;
 
-    server_log_received_packet(self, &received_header);
-    if(received_header.tra == 1){
-        debug("received header - src: %d\t dest: %d", received_header.src_addr, received_header.dst_addr);
+    server_log_received_packet(self, &received_packet->m_header);
+    if(received_packet->m_header.tra == 1){
+        server_log(self, "received header - src: %d\t dest: %d", received_packet->m_header.src_addr, received_packet->m_header.dst_addr);
 
-        e_frame_response = create_ethernet_frame(e_frame.src_addr, &received_so_name);
-        mip_header_response = create_arp_response_package(mip_addr, &received_header);
-        check(rc != -1, "Failed to get interface to send return arp on");
-        rc = send_raw_mip_packet(event->data.fd, sock_name, e_frame_response, mip_header_response);
+        response_e_frame = create_ethernet_frame(received_packet->e_frame.src_addr, &active_interface_so_name);
+        response_m_header = create_arp_response_package(mip_addr, &received_packet->m_header);
+        response_m_packet = create_mip_packet(response_e_frame, response_m_header, '\0');
+        rc = sendto_raw_mip_packet(event->data.fd, active_interface_so_name, response_m_packet);
         check(rc != -1, "Failed to send arp response package");
-        append_to_cache(self->cache, event->data.fd, received_header.src_addr, received_so_name.sll_addr);
-    }else if (received_header.tra == 0){
-        append_to_cache(self->cache, event->data.fd, received_header.src_addr, received_so_name.sll_addr);
-    }else if (received_header.tra == 3){
+        append_to_cache(self->cache, event->data.fd, received_packet->m_header.src_addr, active_interface_so_name->sll_addr);
+    }else if (received_packet->m_header.tra == 0){
+        append_to_cache(self->cache, event->data.fd, received_packet->m_header.src_addr, active_interface_so_name->sll_addr);
+    }else if (received_packet->m_header.tra == 3){
         debug("Request is transport type request");
         char ping_buff[20];
-        snprintf (ping_buff, sizeof(ping_buff), "%d", received_header.src_addr);
+        snprintf (ping_buff, sizeof(ping_buff), "%d", received_packet->m_header.src_addr);
         char *ping = " PING";
         strcat(ping_buff, ping);
 
@@ -104,13 +105,11 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         check(rc != -1, "Failed to write received message to domain socket: %d", self->connected_domain_socket);
     }
 
-    if(e_frame_response)free(e_frame_response);
-    if(mip_header_response)free(mip_header_response);
-    return 1;
+    if(received_packet) destroy_mip_packet(received_packet);
+    return 0;
 
     error:
-        if(e_frame_response)free(e_frame_response);
-        if(mip_header_response)free(mip_header_response);
+        if(received_packet) destroy_mip_packet(received_packet);
         return -1;
 }
 
@@ -119,8 +118,9 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     debug("%zd bytes read\nDomain socket read: %s", bytes_read, read_buffer);
     int rc = 0;
     uint8_t dest_mip_address;
-     struct mip_header *m_header;
-     struct ether_frame *e_frame;
+    struct mip_header *m_header;
+    struct ether_frame *e_frame;
+    struct mip_packet *m_packet;
     char *message = calloc(1, sizeof(char) * 64);
 
     // Parse message on domain socket
@@ -146,8 +146,11 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     debug("dest mip addr: %d", dest_mip_address);
     m_header = create_transport_package(src_mip_addr, dest_mip_address);
 
+    // Create MIP packet
+    m_packet = create_mip_packet(e_frame, m_header, message);
+
     // Send the message
-    rc = send_raw_mip_packet(sock, sock_name, e_frame, m_header);
+    rc = sendto_raw_mip_packet(sock, sock_name, m_packet);
     check(rc != -1, "Failed to send transport packet");
 
     free(message);

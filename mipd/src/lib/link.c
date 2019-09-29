@@ -10,6 +10,7 @@
 #include "interface.h"
 #include "../../../commons/src/dbg.h"
 #include "link.h"
+#include "mip_packet.h"
 
 
 #define BUF_SIZE 1600
@@ -230,6 +231,32 @@ int send_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct ether_frame 
         return -1;
 }
 
+int sendto_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct mip_packet *packet){
+    int rc = 0;
+
+    /* Send message */
+    rc = sendto(sd,packet, sizeof(struct mip_packet), 0, so_name, sizeof(struct sockaddr_ll));
+    check(rc != -1, "Failed to send mip package");
+
+    destroy_mip_packet(packet);
+    return 0;
+
+    error:
+        destroy_mip_packet(packet);
+        return -1;
+}
+
+int recv_raw_mip_packet(int sd, struct mip_packet *packet){
+    int rc = 0;
+
+    rc = recv(sd, packet, sizeof(struct mip_packet), 0);
+    check(rc != -1, "Failed to receive MIP packet");
+    return rc;
+
+    error:
+        return -1;
+}
+
 
 int setup_raw_socket(){
     int so = 0;
@@ -245,8 +272,9 @@ int setup_raw_socket(){
 int complete_mip_arp(struct interface_table *table){
     int rc = 0;
     int i = 0;
-    struct mip_header *request;
-    struct ether_frame *request_frame;
+    struct mip_header *request_m_header;
+    struct ether_frame *request_e_frame;
+    struct mip_packet *request_m_packet;
     uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
     
     debug("interface table size: %d", table->size);
@@ -257,9 +285,10 @@ int complete_mip_arp(struct interface_table *table){
         struct sockaddr_ll *so_name = table->interfaces[i].so_name;
         int8_t mac_addr = table->interfaces[i].interface;
 
-        request = create_arp_request_package(mip_addr);
-        request_frame = create_ethernet_frame(&broadcast_addr, &mac_addr);
-        rc = send_raw_mip_packet(socket, so_name, request_frame, request);
+        request_m_header = create_arp_request_package(mip_addr);
+        request_e_frame = create_ethernet_frame(&broadcast_addr, &mac_addr);
+        request_m_packet = create_mip_packet(request_e_frame, request_m_header, '\0');
+        rc = sendto_raw_mip_packet(socket, so_name, request_m_packet);
         check(rc != -1, "Failed to send arp package for interface");
     }
     return 1;

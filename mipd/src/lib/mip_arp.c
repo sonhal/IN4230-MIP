@@ -22,6 +22,7 @@ int append_to_cache(struct mip_arp_cache *cache, int src_socket, uint8_t mip_add
     return cache->size;
 }
 
+
 // return socket mip address can be reached trough if it is in the cache, -1 if it does not exist in the cache
 int query_mip_address_src_socket(struct mip_arp_cache *cache, uint8_t mip_address){
     int rc = 0;
