@@ -75,6 +75,8 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
     rc = recv_raw_mip_packet(event->data.fd, received_packet);
     //rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_so_name, &received_header);
     check(rc != -1, "Failed to receive from raw socket");
+    char *received_packet_str = mip_packet_to_string(received_packet);
+    server_log(self, " RECEIVED PACKET:\n%s", received_packet_str);
 
     int i_pos = get_interface_pos_for_socket(self->i_table, event->data.fd);
     server_log(self, "position found for socket: %d", i_pos);
