@@ -79,7 +79,7 @@ int sendto_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct mip_packet
 
 int recv_raw_mip_packet(int sd, struct mip_packet *packet){
     int rc = 0;
-    BYTE *raw_packet = calloc(188, sizeof(BYTE));
+    BYTE *raw_packet = calloc(1, MIP_PACKAGE_MAX_SIZE);
 
     rc = recv(sd, raw_packet, 188, 0);
 
@@ -120,8 +120,6 @@ int complete_mip_arp(struct interface_table *table){
     struct mip_packet *request_m_packet;
     uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
     
-    debug("interface table size: %d", table->size);
-
     for (i = 0; i < table->size; i++){
         int mip_addr = table->interfaces[i].mip_address;
         int socket = table->interfaces[i].raw_socket;

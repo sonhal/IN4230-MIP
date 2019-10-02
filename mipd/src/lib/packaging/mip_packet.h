@@ -12,8 +12,9 @@
 #define MIP_PAYLOAD_WORD (sizeof(uint8_t) * 4)
 #define BYTE uint8_t
 
-struct mip_packet
-{
+#define MIP_PACKAGE_MAX_SIZE (188 * sizeof(BYTE))
+
+struct mip_packet{
     struct ether_frame e_frame;
     struct mip_header m_header;
     BYTE *message;
