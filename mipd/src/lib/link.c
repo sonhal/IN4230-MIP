@@ -87,7 +87,8 @@ int recv_raw_mip_packet(int sd, struct mip_packet *packet){
     // Parse raw packet to mip_packet
     memcpy(packet, raw_packet, sizeof(struct mip_packet));
     int payload_len_in_bytes = packet->m_header.payload_len * MIP_PAYLOAD_WORD;
-    memcpy(packet->message, raw_packet[sizeof(struct mip_packet)], payload_len_in_bytes);
+    printf("payload_len: %d", payload_len_in_bytes);
+    memcpy(packet->message, &raw_packet[sizeof(struct mip_packet)], payload_len_in_bytes);
 
     check(rc != -1, "Failed to receive MIP packet");
     return rc;
