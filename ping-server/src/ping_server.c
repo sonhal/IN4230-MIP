@@ -75,7 +75,7 @@ int main(int argc, char *argv[]){
                 rc = read(so, request, sizeof(struct ping_message));
                 check(rc != -1, "Failed to read response from mipd");
                 log_info("RECEIVED from MIP addr: %d", request->src_mip_addr);
-                log_info("Sending to mip addr: %s", request->src_mip_addr);
+                log_info("Sending to mip addr: %d", request->src_mip_addr);
 
                 struct ping_message *response = calloc(1, sizeof(struct ping_message));
                 char *response_message = "PONG";
