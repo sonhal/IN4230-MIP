@@ -79,7 +79,7 @@ int main(int argc, char *argv[]){
     }else {
         rc = read(so, p_response, sizeof(struct ping_message));
         check(rc != -1, "Failed to read repsonse from mipd");
-        printf("received from mipd: %s\tmessage: %s\n", p_response->src_mip_addr, p_response->content);
+        printf("received from mipd: %dFI\tmessage: %s\n", p_response->src_mip_addr, p_response->content);
     }
 
     free(p_message);
