@@ -61,6 +61,7 @@ int sendto_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct mip_packet
     int total_packet_size = 0;
     int payload_len_in_bytes = packet->m_header.payload_len * MIP_PAYLOAD_WORD;
     printf("calculated payload_len_in_bytes: %d\n", payload_len_in_bytes);
+    printf("size of mip_packet: %d", sizeof(struct mip_packet));
     total_packet_size = (sizeof(struct mip_packet) + payload_len_in_bytes);
     printf("calculated total packet size in bytes: %d\n", total_packet_size);
     BYTE *raw_packet = calloc(total_packet_size, sizeof(BYTE));
@@ -93,7 +94,7 @@ int recv_raw_mip_packet(int sd, struct mip_packet *packet){
     memcpy(packet, raw_packet, sizeof(struct mip_packet));
     int payload_len_in_bytes = packet->m_header.payload_len * MIP_PAYLOAD_WORD;
     printf("payload size: %d\n", payload_len_in_bytes);
-    memcpy(packet->message, &raw_packet[sizeof(struct mip_packet)], payload_len_in_bytes);
+    memcpy(packet->message, &raw_packet[sizeof(struct mip_packet)], 2);
 
     check(rc != -1, "Failed to receive MIP packet");
     return rc;
