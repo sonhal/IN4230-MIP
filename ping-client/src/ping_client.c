@@ -8,7 +8,9 @@
 #include <ifaddrs.h>		/* getifaddrs */
 #include <unistd.h>
 #include <sys/un.h>		/* struct sockaddr_un */
-#include <sys/epoll.h> 
+#include <sys/epoll.h>
+#include <netinet/in.h>
+#include <sys/time.h>
 
 
 #include "../../commons/src/polling.h"
@@ -66,20 +68,21 @@ int main(int argc, char *argv[]){
     /* Write works on sockets as well as files: */
     rc = write(so, p_message, sizeof(struct ping_message));
 
-    struct epoll_event so_event = create_epoll_in_event(so);
-    struct epoll_event events[] = {so_event};
-    int epoll_fd = setup_epoll(events, 1);
 
-    int event_n = 0;
-    struct epoll_event events_buf[5];
 
-    event_n = epoll_wait(epoll_fd, &events_buf, 5, 1000);
-    if(event_n == 0){
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    setsockopt(so, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+
+    rc = recv(so, p_response, sizeof(struct ping_message), 0);
+
+    if(rc == -1 && errno == EAGAIN){
         printf("Timeout\n");
     }else {
-        rc = read(so, p_response, sizeof(struct ping_message));
-        check(rc != -1, "Failed to read repsonse from mipd");
-        printf("received from mipd: %dFI\tmessage: %s\n", p_response->src_mip_addr, p_response->content);
+       
+        check(rc != -1, "Failed to read response from mipd");
+        printf("received from mipd: %d\tmessage: %s\n", p_response->src_mip_addr, p_response->content);
     }
 
     free(p_message);
