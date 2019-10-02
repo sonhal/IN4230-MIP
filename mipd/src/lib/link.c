@@ -62,6 +62,7 @@ int sendto_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct mip_packet
     int payload_len_in_bytes = packet->m_header.payload_len * MIP_PAYLOAD_WORD;
     printf("calculated payload_len_in_bytes: %d\n", payload_len_in_bytes);
     total_packet_size = (sizeof(struct mip_packet) + payload_len_in_bytes);
+    printf("calculated total packet size in bytes: %d\n", total_packet_size);
     BYTE *raw_packet = calloc(total_packet_size, sizeof(BYTE));
     memcpy(raw_packet, packet, sizeof(struct mip_packet));
     memcpy(&raw_packet[sizeof(struct mip_packet)], packet->message, payload_len_in_bytes);
