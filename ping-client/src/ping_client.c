@@ -23,8 +23,8 @@ Send the provided message and waits for answere for 1 second using epoll beforin
 int main(int argc, char *argv[]){
 
     int rc = 0;
-    char buffer[256];
     struct ping_message *p_message = calloc(1, sizeof(struct ping_message));
+    struct ping_message *p_response = calloc(1, sizeof(struct ping_message));
 
     int so = 0;
 
@@ -66,7 +66,6 @@ int main(int argc, char *argv[]){
     /* Write works on sockets as well as files: */
     rc = write(so, p_message, sizeof(struct ping_message));
 
-    memset(&buffer, 0, 256);
     struct epoll_event so_event = create_epoll_in_event(so);
     struct epoll_event events[] = {so_event};
     int epoll_fd = setup_epoll(events, 1);
@@ -78,16 +77,18 @@ int main(int argc, char *argv[]){
     if(event_n == 0){
         printf("Timeout\n");
     }else {
-        rc = read(so, buffer, strlen(buffer));
+        rc = read(so, p_response, sizeof(struct ping_message));
         check(rc != -1, "Failed to read repsonse from mipd");
-        printf("received from mipd: %s", buffer);
+        printf("received from mipd: %s\tmessage: %s\n", p_response->src_mip_addr, p_response->content);
     }
 
     free(p_message);
+    free(p_response);
     close(so);
     return 0;
 
     error:
+        free(p_response);
         free(p_message);
         if(so) close(so);
         return -1;
