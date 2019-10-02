@@ -60,15 +60,10 @@ int sendto_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct mip_packet
     //Create raw packet
     int total_packet_size = 0;
     int payload_len_in_bytes = packet->m_header.payload_len * MIP_PAYLOAD_WORD;
-    printf("calculated payload_len_in_bytes: %d\n", payload_len_in_bytes);
-    printf("size of mip_packet: %d", sizeof(struct mip_packet));
     total_packet_size = (sizeof(struct mip_packet) + payload_len_in_bytes);
-    printf("calculated total packet size in bytes: %d\n", total_packet_size);
     BYTE *raw_packet = calloc(total_packet_size, sizeof(BYTE));
     memcpy(raw_packet, packet, sizeof(struct mip_packet));
     memcpy(&raw_packet[sizeof(struct mip_packet)], packet->message, payload_len_in_bytes);
-    printf("actual payload bytes: %d\n", sizeof(raw_packet));
-
 
     /* Send message */
     rc = sendto(sd,raw_packet, total_packet_size, 0, so_name, sizeof(struct sockaddr_ll));
@@ -83,25 +78,25 @@ int sendto_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct mip_packet
 }
 
 int recv_raw_mip_packet(int sd, struct mip_packet *packet){
-    printf("inside recv_raw_mip_packet\n");
     int rc = 0;
     BYTE *raw_packet = calloc(188, sizeof(BYTE));
 
     rc = recv(sd, raw_packet, 188, 0);
 
+    // Create a tmp pointer to message as it will be overwritten durring read
     BYTE *tmp_p = packet->message;
-    printf("package size: %d\n", sizeof(raw_packet));
     // Parse raw packet to mip_packet
     memcpy(packet, raw_packet, sizeof(struct mip_packet));
     int payload_len_in_bytes = packet->m_header.payload_len * MIP_PAYLOAD_WORD;
-    printf("payload size: %d\n", payload_len_in_bytes);
     memcpy(tmp_p, &raw_packet[sizeof(struct mip_packet)], payload_len_in_bytes);
     packet->message = tmp_p;
 
     check(rc != -1, "Failed to receive MIP packet");
+    free(raw_packet);
     return rc;
 
     error:
+        if(raw_packet)free(raw_packet);
         return -1;
 }
 
