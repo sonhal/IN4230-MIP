@@ -75,6 +75,6 @@ int calculate_mip_payload_words(size_t message_size){
 
 
 void destroy_mip_packet(struct mip_packet *packet) {
-    free(packet->message);
+    if(packet->message)free(packet->message);
     free(packet);
 }
