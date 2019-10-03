@@ -80,11 +80,6 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
     //rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_so_name, &received_header);
     check(rc != -1, "Failed to receive from raw socket");
 
-    // LOGG received packet to console
-    char *received_packet_str = mip_packet_to_string(received_packet);
-    server_log(self, " RECEIVED PACKET:\n%s", received_packet_str);
-    free(received_packet_str);
-
     int i_pos = get_interface_pos_for_socket(self->i_table, event->data.fd);
     server_log(self, "position found for socket: %d", i_pos);
     int mip_addr = self->i_table->interfaces[i_pos].mip_address;
@@ -107,6 +102,10 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         print_cache(self->cache);
     }else if (received_packet->m_header.tra == 3){
         debug("Request is transport type request");
+        // LOGG received packet to console
+        char *received_packet_str = mip_packet_to_string(received_packet);
+        server_log(self, " RECEIVED PACKET:\n%s", received_packet_str);
+        free(received_packet_str);
         
         rc = write(self->connected_domain_socket, received_packet->message, mip_header_payload_length_in_bytes(received_packet));
         check(rc != -1, "Failed to write received message to domain socket: %d", self->connected_domain_socket);
@@ -158,6 +157,7 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     // Send the message
     rc = sendto_raw_mip_packet(sock, sock_name, m_packet);
     check(rc != -1, "Failed to send transport packet");
+    server_log(self, " Domain message sent");
 
     free(p_message);
     free(e_frame);
