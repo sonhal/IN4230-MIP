@@ -6,6 +6,13 @@
 #include "packaging/mip_header.h"
 #include "link.h"
 #include "mip_arp.h"
+#include <time.h>
+
+static long get_milli() {
+    struct timespec ts;
+    timespec_get(&ts, TIME_UTC);
+    return (long)ts.tv_sec * 1000L + (ts.tv_nsec / 1000000);
+}
 
 struct mip_arp_cache *create_cache(){
     struct mip_arp_cache *cache;
@@ -45,6 +52,13 @@ int query_mip_address_pos(struct mip_arp_cache *cache, uint8_t mip_address){
         }
     }
     return -1;
+}
+
+int should_update_cache(struct mip_arp_cache *cache){
+    long current_time = get_milli();
+    long last_update = cache->last_update;
+    if(current_time - last_update > cache->update_freq) return 1;
+    return 0;
 }
 
 void print_cache(struct mip_arp_cache *cache){

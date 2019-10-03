@@ -106,6 +106,7 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
 
     }else if (received_packet->m_header.tra == 0){
         append_to_cache(self->cache, event->data.fd, received_packet->m_header.src_addr, active_interface_so_name->sll_addr);
+        print_cache(self->cache);
     }else if (received_packet->m_header.tra == 3){
         debug("Request is transport type request");
         
@@ -223,8 +224,11 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
             }
 
         }
-        rc = complete_mip_arp(self->i_table);
-        print_cache(self->cache);
+
+        if(should_update_cache(self->cache)){
+            rc = complete_mip_arp(self->i_table);
+            check(rc != -1, "Failed to complete mip arp");
+        }
     }
 
     destroy_server_self(self);
