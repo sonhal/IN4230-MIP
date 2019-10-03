@@ -26,4 +26,6 @@ int query_mip_address_pos(struct mip_arp_cache *cache, uint8_t mip_address);
 
 int should_update_cache(struct mip_arp_cache *cache);
 
+int complete_mip_arp(struct interface_table *table, struct mip_arp_cache *cache);
+
 void print_cache(struct mip_arp_cache *cache);

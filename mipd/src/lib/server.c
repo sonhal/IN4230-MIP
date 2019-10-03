@@ -124,7 +124,6 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
 
 // Handle a request to send a message on the domain socket
 int handle_domain_socket_request(struct server_self *self, int bytes_read, char *read_buffer){
-    debug("%zd bytes read\nDomain socket read: %s", bytes_read, read_buffer);
     int rc = 0;
     struct mip_header *m_header = NULL;
     struct ether_frame *e_frame = NULL;
@@ -185,11 +184,11 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
     size_t bytes_read = 0;
     char read_buffer[read_buffer_size + 1];
 
-    rc = complete_mip_arp(self->i_table);
+    rc = complete_mip_arp(self->i_table, self->cache);
     check(rc != -1, "Failed to complete mip arp");
 
     while(running){
-        server_log(self," Polling...\n");
+        server_log(self," Polling...");
         event_count = epoll_wait(epoll_fd, events, event_num, timeout);
         int i = 0;
         for(i = 0; i < event_count; i++){
@@ -225,7 +224,8 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
         }
 
         if(should_update_cache(self->cache)){
-            rc = complete_mip_arp(self->i_table);
+            printf("ARPING!");
+            rc = complete_mip_arp(self->i_table, self->cache);
             check(rc != -1, "Failed to complete mip arp");
         }
     }

@@ -113,27 +113,4 @@ int setup_raw_socket(){
         return -1;
 }
 
-int complete_mip_arp(struct interface_table *table){
-    int rc = 0;
-    int i = 0;
-    struct mip_header *request_m_header;
-    struct ether_frame *request_e_frame;
-    struct mip_packet *request_m_packet;
-    uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
-    
-    for (i = 0; i < table->size; i++){
-        int mip_addr = table->interfaces[i].mip_address;
-        int socket = table->interfaces[i].raw_socket;
-        struct sockaddr_ll *so_name = table->interfaces[i].so_name;
-        int8_t *mac_addr = &table->interfaces[i].interface;
 
-        request_m_packet = create_mip_arp_request_packet(mip_addr, mac_addr);
-        rc = sendto_raw_mip_packet(socket, so_name, request_m_packet);
-        check(rc != -1, "Failed to send arp package for interface");
-    }
-    return 1;
-
-    error:
-        return -1;;
-
-}

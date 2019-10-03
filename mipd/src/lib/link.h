@@ -16,6 +16,4 @@ int recv_raw_mip_packet(int sd, struct mip_packet *packet);
 
 int setup_raw_socket();
 
-int complete_mip_arp(struct interface_table *table);
-
 #endif

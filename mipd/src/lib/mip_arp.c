@@ -11,7 +11,7 @@
 static long get_milli() {
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);
-    return (long)ts.tv_sec * 1000L + (ts.tv_nsec / 1000000);
+    return (long)ts.tv_sec * 1000L + (ts.tv_nsec / 1000000L);
 }
 
 struct mip_arp_cache *create_cache(long update_freq){
@@ -60,6 +60,35 @@ int should_update_cache(struct mip_arp_cache *cache){
     long last_update = cache->last_update;
     if(current_time - last_update > cache->update_freq) return 1;
     return 0;
+}
+
+
+int complete_mip_arp(struct interface_table *table, struct mip_arp_cache *cache){
+    int rc = 0;
+    int i = 0;
+    struct mip_header *request_m_header;
+    struct ether_frame *request_e_frame;
+    struct mip_packet *request_m_packet;
+    uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
+    
+    for (i = 0; i < table->size; i++){
+        int mip_addr = table->interfaces[i].mip_address;
+        int socket = table->interfaces[i].raw_socket;
+        struct sockaddr_ll *so_name = table->interfaces[i].so_name;
+        int8_t *mac_addr = &table->interfaces[i].interface;
+
+        request_m_packet = create_mip_arp_request_packet(mip_addr, mac_addr);
+        rc = sendto_raw_mip_packet(socket, so_name, request_m_packet);
+        check(rc != -1, "Failed to send arp package for interface");
+    }
+
+    // Update cache with the current time
+    cache->last_update = get_milli();
+    return 1;
+
+    error:
+        return -1;;
+
 }
 
 void print_cache(struct mip_arp_cache *cache){
