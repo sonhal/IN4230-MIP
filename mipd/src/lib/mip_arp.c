@@ -119,10 +119,10 @@ int update_cache_on_freq(struct interface_table *table, struct mip_arp_cache *ca
     int rc = 0;
     if(should_update_cache(cache)){
         rc = complete_mip_arp(table, cache);
+        empty_mip_arp_cache(cache);
         check(rc != -1, "Faield to complete arp");
     }
     long update_freq_milli = cache->update_freq;
-    empty_mip_arp_cache(cache);
     return 0;
 
     error:
