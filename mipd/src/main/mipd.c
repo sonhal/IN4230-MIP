@@ -101,7 +101,7 @@ int main(int argc, char *argv[]){
 
     struct server_self *server = init_server_self(local_socket, i_table, u_config->is_debug);
     // MAIN application loop
-    rc = start_server(server, epoll_fd, events, MAX_EVENTS, MAX_READ, 30000);
+    rc = start_server(server, epoll_fd, events, MAX_EVENTS, MAX_READ, 10000);
     check(rc != -1, "epoll loop exited unexpectedly");
 
     clean_up(i_table, epoll_fd, &so_name, local_socket, raw_socket, u_config, events);

@@ -188,9 +188,8 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
     check(rc != -1, "Failed to complete mip arp");
 
     while(running){
-        server_log(self,"Polling...\n");
+        server_log(self," Polling...\n");
         event_count = epoll_wait(epoll_fd, events, event_num, timeout);
-        log_info("%d ready events", event_count);
         int i = 0;
         for(i = 0; i < event_count; i++){
             memset(read_buffer, '\0', read_buffer_size);
@@ -203,7 +202,7 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
 
             // Raw socket event
             else if(is_socket_in_table(self->i_table, events[i].data.fd)){
-                log_info("RAW SOCKET ACTION");
+                server_log(self, "raw socket packet");
                 handle_raw_socket_frame(self, &events[i], read_buffer, read_buffer_size);
                 continue;
             }
@@ -224,6 +223,7 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
             }
 
         }
+        rc = complete_mip_arp(self->i_table);
         print_cache(self->cache);
     }
 
