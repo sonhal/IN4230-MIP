@@ -24,10 +24,19 @@ struct mip_arp_cache *create_cache(long update_freq){
 
 int append_to_cache(struct mip_arp_cache *cache, int src_socket, uint8_t mip_address, uint8_t interface[]){
     struct mip_arp_cache_entry  new_entry = {.address=mip_address, .src_socket=src_socket};
-    memcpy(new_entry.dst_interface, interface, (sizeof(uint8_t) * 6));
-    cache->entries[cache->size] = new_entry;
-    cache->size++;
-    return cache->size;
+
+    // Will be -1 if the entry is new
+    int entry_pos = query_mip_address_pos(cache, mip_address);
+    if(entry_pos != -1){
+        memcpy(new_entry.dst_interface, interface, (sizeof(uint8_t) * 6));
+        cache->entries[entry_pos] = new_entry;
+        return entry_pos;
+    } else {
+        memcpy(new_entry.dst_interface, interface, (sizeof(uint8_t) * 6));
+        cache->entries[cache->size] = new_entry;
+        cache->size++;
+        return cache->size;
+    }
 }
 
 
