@@ -92,8 +92,6 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
 
     server_log_received_packet(self, &received_packet->m_header);
     if(received_packet->m_header.tra == 1){
-        server_log(self, "received header - src: %d\t dest: %d", received_packet->m_header.src_addr, received_packet->m_header.dst_addr);
-
         response_e_frame = create_ethernet_frame(received_packet->e_frame.src_addr, &active_interface_so_name);
         response_m_header = create_arp_response_mip_header(mip_addr, &received_packet->m_header);
         response_m_packet = create_mip_packet(response_e_frame, response_m_header, NULL, 0);

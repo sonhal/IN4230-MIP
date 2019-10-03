@@ -12,8 +12,8 @@ struct user_config *create_user_config(uint64_t mip_address_space_size){
 }
 
 int destroy_user_config(struct user_config *config){
-    free(config->app_socket);
-    free(config->num_mip_addresses);
+    if(config->app_socket)free(config->app_socket);
+    if(config->num_mip_addresses)free(config->num_mip_addresses);
     free(config);
 }
 
