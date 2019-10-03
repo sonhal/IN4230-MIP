@@ -132,7 +132,7 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     server_log(self, "ping message:\nsrc:%d\tdst:%d\tcontent:%s", p_message->src_mip_addr, p_message->dst_mip_addr, p_message->content);
 
     int sock = query_mip_address_src_socket(self->cache, p_message->dst_mip_addr);
-    check(sock != -1, "could not lockate mip address in cache");
+    check(sock != -1, "could not lockate mip address: %d in cache", p_message->dst_mip_addr);
 
     int i_pos = get_interface_pos_for_socket(self->i_table, sock);
     check(i_pos != -1, "Could not locate sock address in interface table");

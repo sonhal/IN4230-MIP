@@ -19,7 +19,7 @@
 #define MAX_READ 1600
 #define MAX_EVENTS 5
 #define MAX_STR_BUF 64
-#define CACHE_UPDATE_FREQ_MILLI 1000
+#define CACHE_UPDATE_FREQ_MILLI 10000
 
 
 void print_startup_info() {
