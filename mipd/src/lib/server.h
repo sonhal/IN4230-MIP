@@ -16,6 +16,6 @@ struct server_self {
 
 void destroy_server_self(struct server_self *self);
 
-struct server_self *init_server_self(int listening_domain_socket, struct interface_table *table, int debug_enabled);
+struct server_self *init_server_self(int listening_domain_socket, struct interface_table *table, int debug_enabled, long cache_update_freq_milli);
 
 int start_server(struct server_self *self, int epoll_fd, struct epoll_event *events, int event_num, int read_buffer_size, int timeout);

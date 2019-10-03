@@ -8,7 +8,7 @@
 
 
 char *test_create_cache(){
-    struct mip_arp_cache *cache = create_cache();
+    struct mip_arp_cache *cache = create_cache(1000);
 
     mu_assert(cache != NULL, "cache is NULL");
     free(cache);
@@ -17,7 +17,7 @@ char *test_create_cache(){
 
 
 char *test_append_cache(){
-    struct mip_arp_cache *cache = create_cache();
+    struct mip_arp_cache *cache = create_cache(1000);
     uint8_t interface[] = {0xaf, 0xff, 0xff, 0x00, 0xff, 0xff};
     int index = -1;
     index = append_to_cache(cache, 255,1, &interface);
@@ -30,7 +30,7 @@ char *test_append_cache(){
 }
 
 char *test_print_cache(){
-    struct mip_arp_cache *cache = create_cache();
+    struct mip_arp_cache *cache = create_cache(1000);
     uint8_t interface[] = {0xff, 0xff, 0x00, 0xff, 0xff, 0xff};
     int index = -1;
     index = append_to_cache(cache, 255,1, &interface);

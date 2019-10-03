@@ -32,13 +32,13 @@ void destroy_server_self(struct server_self *self){
     free(self);
 }
 
-struct server_self *init_server_self(int listening_domain_socket, struct interface_table *table, int debug_enabled){
+struct server_self *init_server_self(int listening_domain_socket, struct interface_table *table, int debug_enabled, long cache_update_freq_milli){
     struct server_self *self;
     self = calloc(1, sizeof(struct server_self));
     self->listening_domain_socket = listening_domain_socket;
     self->connected_domain_socket = -1;
     self->i_table = table;
-    self->cache = create_cache();
+    self->cache = create_cache(cache_update_freq_milli);
     self->debug_enabled = debug_enabled;
     return self;
 }
@@ -213,7 +213,6 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
             // If the event is not a domain or raw socket and the bytes read is null.
             // The event is a domain socket client. And if the bytes read are 0 the client has disconnected
             if(bytes_read == 0){
-                printf("%zd bytes read\n", bytes_read);
                 handle_domain_socket_disconnect(self, &events[i]);
                 continue;
             } else if(!strncmp(read_buffer, "stop\n", 5)){

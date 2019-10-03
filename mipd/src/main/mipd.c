@@ -19,7 +19,7 @@
 #define MAX_READ 1600
 #define MAX_EVENTS 5
 #define MAX_STR_BUF 64
-
+#define CACHE_UPDATE_FREQ_MILLI 1000
 
 
 void print_startup_info() {
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]){
     rc = add_to_table_to_epoll(epoll_fd, i_table);
     check(rc != -1, "Failed to add interfaces to epoll");
 
-    struct server_self *server = init_server_self(local_socket, i_table, u_config->is_debug);
+    struct server_self *server = init_server_self(local_socket, i_table, u_config->is_debug, CACHE_UPDATE_FREQ_MILLI);
     // MAIN application loop
     rc = start_server(server, epoll_fd, events, MAX_EVENTS, MAX_READ, 10000);
     check(rc != -1, "epoll loop exited unexpectedly");

@@ -16,7 +16,7 @@ struct mip_arp_cache
 };
 
 
-struct mip_arp_cache *create_cache();
+struct mip_arp_cache *create_cache(long update_freq);
 
 int append_to_cache(struct mip_arp_cache *cache, int src_socket, uint8_t mip_address, uint8_t interface[]);
 

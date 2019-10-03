@@ -14,9 +14,10 @@ static long get_milli() {
     return (long)ts.tv_sec * 1000L + (ts.tv_nsec / 1000000);
 }
 
-struct mip_arp_cache *create_cache(){
+struct mip_arp_cache *create_cache(long update_freq){
     struct mip_arp_cache *cache;
     cache = calloc(1, sizeof(struct mip_arp_cache));
+    cache->update_freq = update_freq;
     return cache;
 }
 
