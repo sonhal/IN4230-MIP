@@ -133,8 +133,6 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
     int i_pos = get_interface_pos_for_socket(self->i_table, sock);
     check(i_pos != -1, "Could not locate sock address in interface table");
 
-    debug("position found for socket: %d", i_pos);
-
     // set src mip address
     uint8_t src_mip_addr = self->i_table->interfaces[i_pos].mip_address;
     p_message->src_mip_addr = src_mip_addr;
@@ -146,8 +144,6 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
 
     // Create headers for the message
     e_frame = create_ethernet_frame(self->cache->entries[cache_pos].dst_interface, sock_name);
-    debug("src mip addr: %d", src_mip_addr);
-    debug("dest mip addr: %d", p_message->dst_mip_addr);
     m_header = create_transport_package(src_mip_addr, p_message->dst_mip_addr);
 
     // Create MIP packet
@@ -185,15 +181,12 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
     check(rc != -1, "Failed to complete mip arp");
 
     while(running){
-        printf("debug value: %d", self->debug_enabled);
         server_log(self,"Polling...\n");
         event_count = epoll_wait(epoll_fd, events, event_num, timeout);
         log_info("%d ready events", event_count);
         int i = 0;
         for(i = 0; i < event_count; i++){
             memset(read_buffer, '\0', read_buffer_size);
-            printf("Reading file descriptor [%d] -- ", events[i].data.fd);
-            
 
             // Event on the listening local domain socket, should only be for new connections
             if(events[i].data.fd == self->listening_domain_socket){

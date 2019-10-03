@@ -21,8 +21,21 @@
 #define MAX_STR_BUF 64
 
 
-void startup();
-int setup_epoll(struct epoll_event events_to_handle[], int event_num);
+
+void print_startup_info() {
+    pid_t pid = getpid();
+    log_info("MIP daemon started - pid: %d", pid);
+}
+
+
+void clean_up(struct interface_table *i_table, int epoll_fd, struct sockaddr_un *so_name, int local_socket, int raw_socket, struct user_config *u_config){
+    if(i_table) close_open_sockets_on_table_interface(i_table);
+    if(epoll_fd) close(epoll_fd);
+    if(u_config) destroy_user_config(u_config);
+    unlink(so_name->sun_path);
+    close(local_socket);
+    close(raw_socket);
+}
 
 
 int bind_table_to_raw_sockets(struct interface_table *table){
@@ -65,7 +78,7 @@ int main(int argc, char *argv[]){
     local_socket = setup_domain_socket(&so_name, u_config->app_socket, strnlen(u_config->app_socket, 255));
     check(local_socket != -1, "Failed to create local socket");
 
-    startup();
+    print_startup_info();
 
     rc = bind_table_to_raw_sockets(i_table);
     check(rc != -1, "Failed to setup raw sockets for interfaces");
@@ -74,7 +87,7 @@ int main(int argc, char *argv[]){
 
 
     raw_socket = setup_raw_socket();
-    check(raw_socket != -1, "Failed to create raw socket");
+    check(raw_socket != -1, "Failed to create raw socket - daemon must be started with root privileges");
 
     struct epoll_event stdin_event = create_epoll_in_event(0);
     struct epoll_event local_domain_event = create_epoll_in_event(local_socket);
@@ -90,32 +103,13 @@ int main(int argc, char *argv[]){
     rc = start_server(server, epoll_fd, &events, MAX_EVENTS, MAX_READ, 30000);
     check(rc != -1, "epoll loop exited unexpectedly");
 
-    // Cleanup
-    close_open_sockets_on_table_interface(i_table);
-    rc = close(epoll_fd);
-    check(rc != -1, "Failed to close epoll file descriptor");
-    unlink(so_name.sun_path);
-    close(local_socket);
-    close(raw_socket);
-    destroy_user_config(u_config);
+    clean_up(i_table, epoll_fd, &so_name, local_socket, raw_socket, u_config);
     return 0;
 
     error:
-        close_open_sockets_on_table_interface(i_table);
-        if(epoll_fd) close(epoll_fd);
-        unlink(so_name.sun_path);
-        close(local_socket);
-        close(raw_socket);
-        destroy_user_config(u_config);
+        clean_up(i_table, epoll_fd, &so_name, local_socket, raw_socket, u_config);
         return -1;
 }
-
-void startup() {
-    pid_t pid = getpid();
-    log_info("MIP daemon started - pid: %d", pid);
-}
-
-
 
 
 

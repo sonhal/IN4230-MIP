@@ -20,9 +20,6 @@
 Ping server program. Connects to the mipd daemon trough the provided domain socket.
 */
 int main(int argc, char *argv[]){
-    char *pong_message = "PONG";
-    char *first_arg = argv[1];
-
     if(argc < 2){
         printf("ping_server [-h] <socket_application>\n");
         return -1;
@@ -30,7 +27,7 @@ int main(int argc, char *argv[]){
 
     if(!strncmp("-h", argv[1], 2)){
         printf("ping_server [-h] <socket_application>\n");
-        return 1;
+        return 0;
     }
 
     check(argc == 2, "ping_server [-h] <socket_application>\n");
@@ -56,41 +53,23 @@ int main(int argc, char *argv[]){
     check(rc != -1, "Failed to connect to domain socket: %s", argv[1]);
     printf("Connected to mipd domain socket at: %d", so);
 
-    struct epoll_event so_event = create_epoll_in_event(so);
-    struct epoll_event events[] = {so_event};
-    int epoll_fd = setup_epoll(events, 1);
-
-    int event_n = 0;
-    struct epoll_event events_buf[5];
 
     log_info("Ping server up and polling");
     while (1)
     {
-        event_n = epoll_wait(epoll_fd, &events_buf, 5, 30000);
-        if(event_n == 0){
-            log_info("Ping server polling...");
-         }else {
-            do
-            {
-                rc = read(so, request, sizeof(struct ping_message));
-                check(rc != -1, "Failed to read response from mipd");
-                log_info("RECEIVED from MIP addr: %d", request->src_mip_addr);
-                log_info("Sending to mip addr: %d", request->src_mip_addr);
+        rc = recv(so, request, sizeof(struct ping_message), 0);
+        check(rc != -1, "Failed to read response from mipd");
+        log_info("RECEIVED from MIP addr: %d", request->src_mip_addr);
+        log_info("Sending to mip addr: %d", request->src_mip_addr);
 
-                struct ping_message *response = calloc(1, sizeof(struct ping_message));
-                char *response_message = "PONG";
-                strncpy(response->content, response_message, strlen(response_message));
-                response->dst_mip_addr = request->src_mip_addr;
+        struct ping_message *response = calloc(1, sizeof(struct ping_message));
+        strncpy(response->content, "PONG", strlen(response->content) - 1);
+        response->dst_mip_addr = request->src_mip_addr;
 
-                rc = write(so, response, sizeof(struct ping_message));
-                check(rc != -1, "Failed to write to mipd");
-            } while (rc > 0);
-
-
-        }
+        rc = write(so, response, sizeof(struct ping_message));
+        check(rc != -1, "Failed to write to mipd");
         memset(request, 0, sizeof(struct ping_message));
     }
-    
 
     close(so);
     return 0;

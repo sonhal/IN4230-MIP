@@ -12,6 +12,7 @@
 #include <netinet/in.h>
 #include <sys/time.h>
 #include <time.h>
+#include <inttypes.h>
 
 #include "../../commons/src/polling.h"
 #include "../../commons/src/dbg.h"
@@ -53,7 +54,8 @@ int main(int argc, char *argv[]){
     }
     check(argc == 4, "ping_client [-h] <destination_host> <message> <socket_application>");
 
-    rc = sscanf(argv[1], "%d",  &p_message->dst_mip_addr);
+
+    rc = sscanf(argv[1], "%" SCNu8 ,  &p_message->dst_mip_addr);
     check(rc != -1, "[PING CLIENT] Failed to parse mip address arg");
     strcpy(p_message->content, argv[2]);
 
