@@ -1,3 +1,6 @@
+#ifndef _INTERFACE_H
+#define _INTERFACE_H
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -52,3 +55,5 @@ char *macaddr_str_for_int_buff(char address[]);
 int close_open_sockets_on_table_interface(struct interface_table *table);
 
 int add_to_table_to_epoll(int fd, struct interface_table *table);
+
+#endif

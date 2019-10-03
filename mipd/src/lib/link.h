@@ -5,6 +5,7 @@
 #include "packaging/mip_header.h"
 #include "packaging/ether_frame.h"
 #include "packaging/mip_packet.h"
+#include "interface.h"
 
 
 int last_inteface(struct sockaddr_ll *so_name);

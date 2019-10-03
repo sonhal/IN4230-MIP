@@ -10,18 +10,18 @@
 char *test_create_mip_packet(){
     struct ether_frame t_frame = {};
     struct mip_header m_header = {};
-    char *message = "Hello";
+    const BYTE *message = "Hello";
     struct mip_packet *packet = create_mip_packet(&t_frame, &m_header, message, strlen(message));
     mu_assert(packet != NULL, "Packet should not be NULL");
-    mu_assert(strncmp(packet->message, message, strlen(message)) == 0, "Packet message should be equal to message passed");
+    mu_assert(strncmp((char *)packet->message, (char *)message, strlen((char *)message)) == 0, "Packet message should be equal to message passed");
     return NULL;
 }
 
 char *test_mip_packet_to_string(){
     struct ether_frame t_frame = {};
     struct mip_header m_header = {};
-    char *message = "Hello";
-    struct mip_packet *packet = create_mip_packet(&t_frame, &m_header, message, strlen(message));
+    BYTE *message = "Hello";
+    struct mip_packet *packet = create_mip_packet(&t_frame, &m_header, message, strlen("Hello"));
     char *m_p_str = mip_packet_to_string(packet);
     printf("%s", m_p_str);
     free(m_p_str);
@@ -32,7 +32,7 @@ char *test_mip_packet_to_string(){
 char *test_calculate_payload() {
     char *payload = "MY PAYLOAD";
     size_t payload_size = strlen(payload);
-    printf("payload size: %d\n", payload_size);
+    printf("payload size: %lu\n", payload_size);
     int payload_words = calculate_mip_payload_words(payload_size);
     int payload_padding = (payload_words * 4) - payload_size;
     printf("number of words: %d\n", payload_words);

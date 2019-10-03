@@ -28,10 +28,11 @@ void print_startup_info() {
 }
 
 
-void clean_up(struct interface_table *i_table, int epoll_fd, struct sockaddr_un *so_name, int local_socket, int raw_socket, struct user_config *u_config){
+void clean_up(struct interface_table *i_table, int epoll_fd, struct sockaddr_un *so_name, int local_socket, int raw_socket, struct user_config *u_config, struct epoll_event *events){
     if(i_table) close_open_sockets_on_table_interface(i_table);
     if(epoll_fd) close(epoll_fd);
     if(u_config) destroy_user_config(u_config);
+    if(events) free(events);
     unlink(so_name->sun_path);
     close(local_socket);
     close(raw_socket);
@@ -63,7 +64,8 @@ int main(int argc, char *argv[]){
     int epoll_fd = 0;
     struct sockaddr_un so_name;
     struct interface_table *i_table = create_loaded_interface_table();
-    struct user_config *u_config;
+    struct user_config *u_config = NULL;
+    struct epoll_event *events = calloc(MAX_EVENTS, sizeof(struct epoll_event));
     
     check(argc > 1, "mipd [-h] [-d] <socket_application> [MIP addresses ...]");
     if(!strncmp(argv[1], "-h", 2)){
@@ -99,15 +101,14 @@ int main(int argc, char *argv[]){
 
     struct server_self *server = init_server_self(local_socket, i_table, u_config->is_debug);
     // MAIN application loop
-    struct epoll_event events[MAX_EVENTS];
-    rc = start_server(server, epoll_fd, &events, MAX_EVENTS, MAX_READ, 30000);
+    rc = start_server(server, epoll_fd, events, MAX_EVENTS, MAX_READ, 30000);
     check(rc != -1, "epoll loop exited unexpectedly");
 
-    clean_up(i_table, epoll_fd, &so_name, local_socket, raw_socket, u_config);
+    clean_up(i_table, epoll_fd, &so_name, local_socket, raw_socket, u_config, events);
     return 0;
 
     error:
-        clean_up(i_table, epoll_fd, &so_name, local_socket, raw_socket, u_config);
+        clean_up(i_table, epoll_fd, &so_name, local_socket, raw_socket, u_config, events);
         return -1;
 }
 
