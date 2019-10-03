@@ -63,7 +63,8 @@ int main(int argc, char *argv[]){
         log_info("Sending to mip addr: %d", request->src_mip_addr);
 
         struct ping_message *response = calloc(1, sizeof(struct ping_message));
-        strncpy(&response->content, "PONG", strlen(&response->content) - 1);
+        char *message = "PONG";
+        strncpy(response->content, message, 31);
         response->dst_mip_addr = request->src_mip_addr;
 
         rc = write(so, response, sizeof(struct ping_message));
