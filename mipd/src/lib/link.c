@@ -69,10 +69,12 @@ int sendto_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct mip_packet
     rc = sendto(sd,raw_packet, total_packet_size, 0, so_name, sizeof(struct sockaddr_ll));
     check(rc != -1, "Failed to send mip package");
 
+    free(raw_packet);
     destroy_mip_packet(packet);
     return 0;
 
     error:
+        if(raw_packet)free(raw_packet);
         destroy_mip_packet(packet);
         return -1;
 }

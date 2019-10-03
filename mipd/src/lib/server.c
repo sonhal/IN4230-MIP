@@ -79,8 +79,11 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
     rc = recv_raw_mip_packet(event->data.fd, received_packet);
     //rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_so_name, &received_header);
     check(rc != -1, "Failed to receive from raw socket");
+
+    // LOGG received packet to console
     char *received_packet_str = mip_packet_to_string(received_packet);
     server_log(self, " RECEIVED PACKET:\n%s", received_packet_str);
+    free(received_packet_str);
 
     int i_pos = get_interface_pos_for_socket(self->i_table, event->data.fd);
     server_log(self, "position found for socket: %d", i_pos);
@@ -97,6 +100,10 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         rc = sendto_raw_mip_packet(event->data.fd, active_interface_so_name, response_m_packet);
         check(rc != -1, "Failed to send arp response package");
         append_to_cache(self->cache, event->data.fd, received_packet->m_header.src_addr, active_interface_so_name->sll_addr);
+        // Free the used frames and headers
+        free(response_e_frame);
+        free(response_m_header);
+
     }else if (received_packet->m_header.tra == 0){
         append_to_cache(self->cache, event->data.fd, received_packet->m_header.src_addr, active_interface_so_name->sll_addr);
     }else if (received_packet->m_header.tra == 3){
