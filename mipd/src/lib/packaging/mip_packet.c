@@ -1,9 +1,28 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "../../../../commons/src/dbg.h"
+#include <stdint.h>
 
+#include "../../../../commons/src/dbg.h"
+#include "ether_frame.h"
+#include "mip_header.h"
 #include "mip_packet.h"
+
+
+
+static int create_payload(struct mip_packet *packet, BYTE *message, size_t message_size){
+    int number_of_words_needed = calculate_mip_payload_words(message_size);
+    check(number_of_words_needed <= PAYLOAD_MAX_WORD_NUM, "Payload to large, cannot create MIP packet");  
+
+    packet->message = calloc(number_of_words_needed, MIP_PAYLOAD_WORD);
+    memcpy(packet->message, message, message_size);
+    packet->m_header.payload_len = number_of_words_needed;
+
+    return 0;
+
+    error:
+        return -1;
+}
 
 /*
 Important general MIP protocol rule
@@ -24,12 +43,29 @@ struct mip_packet *create_mip_packet(const struct ether_frame *e_frame, const st
     
 
     if(message_size > 0){
-        int number_of_words_needed = calculate_mip_payload_words(message_size);
-        check(number_of_words_needed <= PAYLOAD_MAX_WORD_NUM, "Payload to large, cannot create MIP packet");  
-        new_packet->message = calloc(number_of_words_needed, MIP_PAYLOAD_WORD);
-        memcpy(new_packet->message, message, message_size);
-        new_packet->m_header.payload_len = number_of_words_needed;
+       rc = create_payload(new_packet, message, message_size);
+       check(rc != -1, "Failed to create payload for new mip packet");
     }
+    
+    return new_packet;
+
+    error:
+        destroy_mip_packet(new_packet);
+        return NULL;
+}
+
+
+struct mip_packet *create_mip_packet_from_addrs(int8_t src_mip_addrs, int8_t src_mac_addrs[6] , int8_t dst_mip_addrs, int8_t dst_mac_addrs[6], const BYTE *message, size_t message_size){
+    int rc = 0;
+
+    struct mip_header *m_header = create_transport_mip_header(src_mip_addrs, dst_mip_addrs);
+    check(m_header != NULL, "Failed to create mip header");
+    struct ether_frame *e_frame = create_transport_ethernet_frame(src_mac_addrs, dst_mac_addrs);
+    check(e_frame != NULL, "Failed to create ether frame");
+    struct mip_packet *new_packet = create_mip_packet(e_frame, m_header, NULL, 0);
+    check(new_packet != NULL, "Failed to create mip packet");
+    free(e_frame);
+    free(m_header);
     
     return new_packet;
 
@@ -43,9 +79,19 @@ struct mip_packet *create_empty_mip_packet(){
     struct mip_header* m_header = calloc(1, sizeof(struct mip_header));
     BYTE *message = calloc(PAYLOAD_MAX_WORD_NUM, MIP_PAYLOAD_WORD);
     struct mip_packet *packet = create_mip_packet(e_frame, m_header, message, PAYLOAD_MAX_WORD_NUM * MIP_PAYLOAD_WORD);
-    free(e_frame);
-    free(m_header);
+    destroy_ether_frame(e_frame);
+    destroy_mip_header(m_header);
     return packet;
+}
+
+
+struct mip_packet *create_mip_arp_request_packet(uint8_t src_mip_addrs, uint8_t *src_mac_addrs){
+    struct mip_header *request_m_header = create_arp_request_mip_header(src_mip_addrs);
+    struct ether_frame *request_e_frame = create_ethernet_arp_frame_from_mac_addrs(src_mac_addrs);
+    struct mip_packet *request_m_packet = create_mip_packet(request_e_frame, request_m_header, NULL, 0);
+    destroy_ether_frame(request_e_frame);
+    destroy_mip_header(request_m_header);
+    return request_m_packet;
 }
 
 char *mip_packet_to_string(struct mip_packet *packet){

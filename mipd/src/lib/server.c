@@ -95,7 +95,7 @@ int handle_raw_socket_frame(struct server_self *self, struct epoll_event *event,
         server_log(self, "received header - src: %d\t dest: %d", received_packet->m_header.src_addr, received_packet->m_header.dst_addr);
 
         response_e_frame = create_ethernet_frame(received_packet->e_frame.src_addr, &active_interface_so_name);
-        response_m_header = create_arp_response_package(mip_addr, &received_packet->m_header);
+        response_m_header = create_arp_response_mip_header(mip_addr, &received_packet->m_header);
         response_m_packet = create_mip_packet(response_e_frame, response_m_header, NULL, 0);
         rc = sendto_raw_mip_packet(event->data.fd, active_interface_so_name, response_m_packet);
         check(rc != -1, "Failed to send arp response package");
@@ -151,7 +151,7 @@ int handle_domain_socket_request(struct server_self *self, int bytes_read, char 
 
     // Create headers for the message
     e_frame = create_ethernet_frame(self->cache->entries[cache_pos].dst_interface, sock_name);
-    m_header = create_transport_package(src_mip_addr, p_message->dst_mip_addr);
+    m_header = create_transport_mip_header(src_mip_addr, p_message->dst_mip_addr);
 
     // Create MIP packet
     p_message->src_mip_addr = m_header->src_addr; // Sett src address in ping message so it can be PONG'ed

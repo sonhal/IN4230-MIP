@@ -13,11 +13,13 @@ struct mip_header {
     MIP_ADDRESS src_addr;
 } __attribute__((packed));
 
-struct mip_header *create_arp_request_package(MIP_ADDRESS src_addr);
+struct mip_header *create_arp_request_mip_header(MIP_ADDRESS src_addr);
 
-struct mip_header *create_arp_response_package(MIP_ADDRESS src_addr, struct mip_header *arp_request);
+struct mip_header *create_arp_response_mip_header(MIP_ADDRESS src_addr, struct mip_header *arp_request);
 
-struct mip_header *create_transport_package(MIP_ADDRESS src_addr, MIP_ADDRESS dest_addr);
+struct mip_header *create_transport_mip_header(MIP_ADDRESS src_addr, MIP_ADDRESS dest_addr);
 
 char *mip_header_to_string(struct mip_header *m_header);
+
+void destroy_mip_header(struct mip_header *header);
 #endif

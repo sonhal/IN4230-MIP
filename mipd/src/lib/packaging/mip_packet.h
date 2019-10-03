@@ -24,6 +24,10 @@ struct mip_packet{
 
 struct mip_packet *create_mip_packet(const struct ether_frame *e_frame, const struct mip_header *m_header, const BYTE *message, size_t message_size);
 
+struct mip_packet *create_mip_packet_from_addrs(int8_t src_mip_addrs, int8_t *src_mac_addrs , int8_t dst_mip_addrs, int8_t *dst_mac_addrs, const BYTE *message, size_t message_size);
+
+struct mip_packet *create_mip_arp_request_packet(uint8_t src_mip_addrs, uint8_t *src_mac_addrs);
+
 struct mip_packet *create_empty_mip_packet();
 
 void destroy_mip_packet(struct mip_packet *packet);

@@ -14,7 +14,6 @@
 
 
 #define BUF_SIZE 1600
-#define ETH_BROADCAST_ADDR {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 #define PROTOCOL_TYPE 0xff
 #define ETH_P_MIP 0x88B5
 
@@ -126,11 +125,9 @@ int complete_mip_arp(struct interface_table *table){
         int mip_addr = table->interfaces[i].mip_address;
         int socket = table->interfaces[i].raw_socket;
         struct sockaddr_ll *so_name = table->interfaces[i].so_name;
-        int8_t mac_addr = table->interfaces[i].interface;
+        int8_t *mac_addr = &table->interfaces[i].interface;
 
-        request_m_header = create_arp_request_package(mip_addr);
-        request_e_frame = create_ethernet_frame(&broadcast_addr, &mac_addr);
-        request_m_packet = create_mip_packet(request_e_frame, request_m_header, NULL, 0);
+        request_m_packet = create_mip_arp_request_packet(mip_addr, mac_addr);
         rc = sendto_raw_mip_packet(socket, so_name, request_m_packet);
         check(rc != -1, "Failed to send arp package for interface");
     }

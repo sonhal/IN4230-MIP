@@ -31,6 +31,30 @@ struct ether_frame *create_ethernet_frame(int8_t *dest[], struct sockaddr_ll *so
     return frame;
 }
 
+struct ether_frame *create_ethernet_arp_frame(struct sockaddr_ll *so_name){
+    uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
+    struct ether_frame *frame = calloc(1, sizeof(struct ether_frame));
+    /* Fill in Ethernet header */
+    memcpy(frame->dst_addr, broadcast_addr, MAC_ADDRESS_SIZE);
+    memcpy(frame->src_addr, so_name->sll_addr, MAC_ADDRESS_SIZE);
+    /* Match the ethertype in packet_so9cket.c: */
+    frame->eth_proto[0] = 0x88;
+    frame->eth_proto[1] = 0xB5;
+    return frame;
+}
+
+struct ether_frame *create_ethernet_arp_frame_from_mac_addrs(uint8_t *mac_address){
+    uint8_t broadcast_addr[] = ETH_BROADCAST_ADDR;
+    struct ether_frame *frame = calloc(1, sizeof(struct ether_frame));
+    /* Fill in Ethernet header */
+    memcpy(frame->dst_addr, broadcast_addr, MAC_ADDRESS_SIZE);
+    memcpy(frame->src_addr, mac_address, MAC_ADDRESS_SIZE);
+    /* Match the ethertype in packet_so9cket.c: */
+    frame->eth_proto[0] = 0x88;
+    frame->eth_proto[1] = 0xB5;
+    return frame;
+}
+
 char *ether_addr_str(int8_t mac_address[6]){
     char *macaddr = calloc(6 * 2 + 6, sizeof(char));
     
@@ -76,4 +100,8 @@ char *ether_frame_to_string(struct ether_frame *e_frame){
     free(dst_str);
     free(e_prot_str);
     return e_string;
+}
+
+void destroy_ether_frame(struct ether_frame *frame){
+    if(frame) free(frame);
 }

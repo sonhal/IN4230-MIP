@@ -56,7 +56,7 @@ char *test_sendto_mip_packet(){
     raw_socket = setup_raw_socket();
     rc = bind(raw_socket, &so_name[0], sizeof(struct sockaddr_ll));
     struct ether_frame *e_frame = create_ethernet_frame(&so_name->sll_addr, &so_name[0]);
-    struct mip_header *m_header = create_arp_request_package(255);
+    struct mip_header *m_header = create_arp_request_mip_header(255);
     const BYTE *message = "HELLO";
     struct mip_packet *packet = create_mip_packet(e_frame, m_header, message, strlen("Message"));
     
