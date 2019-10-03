@@ -8,11 +8,26 @@
 #include "mip_arp.h"
 #include <time.h>
 
+
+
 static long get_milli() {
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);
     return (long)ts.tv_sec * 1000L + (ts.tv_nsec / 1000000L);
 }
+
+
+static void destroy_mip_arp_cache(struct mip_arp_cache *cache){
+    if(cache) free(cache);
+}
+
+
+static void empty_mip_arp_cache(struct mip_arp_cache *cache){
+    memset(&cache->entries, 0, sizeof(struct mip_arp_cache_entry) * 64);
+    cache->size = 0;
+    cache->last_update = get_milli();
+}
+
 
 struct mip_arp_cache *create_cache(long update_freq){
     struct mip_arp_cache *cache;
@@ -98,6 +113,20 @@ int complete_mip_arp(struct interface_table *table, struct mip_arp_cache *cache)
     error:
         return -1;;
 
+}
+
+int update_cache_on_freq(struct interface_table *table, struct mip_arp_cache *cache){
+    int rc = 0;
+    if(should_update_cache(cache)){
+        rc = complete_mip_arp(table, cache);
+        check(rc != -1, "Faield to complete arp");
+    }
+    long update_freq_milli = cache->update_freq;
+    empty_mip_arp_cache(cache);
+    return 0;
+
+    error:
+        return -1;
 }
 
 void print_cache(struct mip_arp_cache *cache){

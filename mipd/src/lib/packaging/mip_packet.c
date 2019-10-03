@@ -95,7 +95,7 @@ struct mip_packet *create_mip_arp_request_packet(uint8_t src_mip_addrs, uint8_t 
 }
 
 char *mip_packet_to_string(struct mip_packet *packet){
-    char *m_p_string = calloc(256, sizeof(char));
+    char *m_p_string = calloc(20, sizeof(char));
 
     char *e_frame_str = ether_frame_to_string(&packet->e_frame);
     char *m_header_str = mip_header_to_string(&packet->m_header);

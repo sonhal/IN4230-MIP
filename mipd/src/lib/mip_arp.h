@@ -28,4 +28,6 @@ int should_update_cache(struct mip_arp_cache *cache);
 
 int complete_mip_arp(struct interface_table *table, struct mip_arp_cache *cache);
 
+int update_cache_on_freq(struct interface_table *table, struct mip_arp_cache *cache);
+
 void print_cache(struct mip_arp_cache *cache);

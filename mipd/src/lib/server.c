@@ -222,12 +222,7 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
             }
 
         }
-
-        if(should_update_cache(self->cache)){
-            printf("ARPING!");
-            rc = complete_mip_arp(self->i_table, self->cache);
-            check(rc != -1, "Failed to complete mip arp");
-        }
+        update_cache_on_freq(self->i_table, self->cache);
     }
 
     destroy_server_self(self);
