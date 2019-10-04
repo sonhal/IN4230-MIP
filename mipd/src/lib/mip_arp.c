@@ -25,7 +25,7 @@ static void destroy_mip_arp_cache(struct mip_arp_cache *cache){
 static void empty_mip_arp_cache(struct mip_arp_cache *cache){
     memset(&cache->entries, 0, sizeof(struct mip_arp_cache_entry) * 64);
     cache->size = 0;
-    cache->last_update = get_milli();
+    cache->last_arp = get_milli();
 }
 
 
@@ -33,12 +33,13 @@ struct mip_arp_cache *create_cache(long update_freq){
     struct mip_arp_cache *cache;
     cache = calloc(1, sizeof(struct mip_arp_cache));
     cache->update_freq = update_freq;
+    cache->last_arp = 0;
     return cache;
 }
 
 
 int append_to_cache(struct mip_arp_cache *cache, int src_socket, uint8_t mip_address, uint8_t interface[]){
-    struct mip_arp_cache_entry  new_entry = {.address=mip_address, .src_socket=src_socket};
+    struct mip_arp_cache_entry  new_entry = {.address=mip_address, .src_socket=src_socket, .last_update=get_milli()};
 
     // Will be -1 if the entry is new
     int entry_pos = query_mip_address_pos(cache, mip_address);
@@ -54,6 +55,20 @@ int append_to_cache(struct mip_arp_cache *cache, int src_socket, uint8_t mip_add
     }
 }
 
+// Removes entry from cache and reduces the size field in cache, returns pos of element removed
+int remove_from_cache(struct mip_arp_cache *cache, int pos){
+    int rc = 0;
+    int i = 0;
+
+    if(pos != cache->size - 1){
+        for(i = pos + 1; i < cache->size; i++){
+            cache->entries[i - 1] = cache->entries[i];
+        }
+    }
+    memset(&cache->entries[cache->size - 1], 0, sizeof(struct mip_arp_cache_entry));
+    cache->size--;
+    return pos;
+}
 
 // return socket mip address can be reached trough if it is in the cache, -1 if it does not exist in the cache
 int query_mip_address_src_socket(struct mip_arp_cache *cache, uint8_t mip_address){
@@ -79,10 +94,17 @@ int query_mip_address_pos(struct mip_arp_cache *cache, uint8_t mip_address){
     return -1;
 }
 
-int should_update_cache(struct mip_arp_cache *cache){
+int should_complete_new_arp(struct mip_arp_cache *cache){
     long current_time = get_milli();
-    long last_update = cache->last_update;
+    long last_update = cache->last_arp;
     if(current_time - last_update > cache->update_freq) return 1;
+    return 0;
+}
+
+int is_cache_entry_expired(struct mip_arp_cache_entry *entry, long update_freq){
+    long current_time = get_milli();
+    long last_update = entry->last_update;
+    if(current_time - last_update > update_freq) return 1;
     return 0;
 }
 
@@ -107,22 +129,27 @@ int complete_mip_arp(struct interface_table *table, struct mip_arp_cache *cache)
     }
 
     // Update cache with the current time
-    cache->last_update = get_milli();
+    cache->last_arp = get_milli();
     return 1;
 
     error:
-        return -1;;
+        return -1;
 
 }
 
-int update_cache_on_freq(struct interface_table *table, struct mip_arp_cache *cache){
+int update_arp_cache(struct interface_table *table, struct mip_arp_cache *cache){
     int rc = 0;
-    if(should_update_cache(cache)){
-        rc = complete_mip_arp(table, cache);
-        empty_mip_arp_cache(cache);
-        check(rc != -1, "Faield to complete arp");
+    int i = 0;
+    for(i = 0; i < cache->size; i++){
+        if(is_cache_entry_expired(&cache->entries[i], cache->update_freq)){
+            remove_from_cache(cache, i);
+            i--; // Walk back i as the cache has been left shifted by remove function
+        }
     }
-    long update_freq_milli = cache->update_freq;
+    if(should_complete_new_arp(cache)){
+        rc = complete_mip_arp(table, cache);
+        check(rc != -1, "Failed to complete arp");
+    }
     return 0;
 
     error:

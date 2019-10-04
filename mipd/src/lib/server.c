@@ -220,7 +220,7 @@ int start_server(struct server_self *self, int epoll_fd, struct epoll_event *eve
             }
 
         }
-        update_cache_on_freq(self->i_table, self->cache);
+        update_arp_cache(self->i_table, self->cache);
     }
 
     destroy_server_self(self);
