@@ -8,3 +8,9 @@ create mipd - a MIP daemon for handling network requests
 2. MIP-ARP done
 3. Update ARP-cache regularly
 4. Drop the packet when a packet arrives and no application is connected on domain socket
+
+
+References:
+
+Linked list and Queue implementations where copied from
+https://github.com/zedshaw/liblcthw/tree/master/src/lcthw under the following license: https://github.com/zedshaw/liblcthw/blob/master/LICENSE
