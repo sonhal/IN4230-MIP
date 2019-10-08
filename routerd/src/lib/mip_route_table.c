@@ -25,7 +25,7 @@ MIPRouteTable *MIPRouteTable_create(MIP_ADDRESS table_address){
     table->entries = calloc(1, sizeof(List));
 
     //Add route to itself
-    MIPRouteTable_update(table, table_address, table_address, 0);
+    MIPRouteTable_update(table, table_address, 255, 0);
     table->table_address = table_address;
     return table;
 
