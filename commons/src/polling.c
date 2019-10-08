@@ -18,13 +18,6 @@ struct epoll_event create_epoll_in_event(int fd){
     return new_event;
 }
 
-struct event_handler create_event_handler(int fd, void *handler_func){
-    struct event_handler handler;
-    handler.fd = fd;
-    handler.handler_func = handler_func;
-    return handler;
-}
-
 int setup_epoll(struct epoll_event events_to_handle[], int event_num){
     int epoll_fd = 0;
     int rc = 0;

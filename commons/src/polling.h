@@ -1,12 +1,5 @@
 
 
-struct event_handler
-{
-    int fd;
-    void (*handler_func)(int);
-};
-
-struct event_handler create_event_handler(int fd, void *handler_func);
 
 struct epoll_event create_epoll_in_event(int fd);
 
