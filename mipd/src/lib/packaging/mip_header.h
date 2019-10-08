@@ -2,8 +2,7 @@
 #ifndef _MIP_H
 #define _MIP_H
 #include <stdint.h>
-
-#define MIP_ADDRESS uint8_t
+#include "../../../../commons/src/definitions.h"
 
 struct mip_header {
     uint8_t tra: 3;
