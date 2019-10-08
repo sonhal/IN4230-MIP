@@ -12,6 +12,11 @@
 
 #include "router_server.h"
 
+
+#define PACKET_BUFFER_SIZE 1000
+#define EVENTS_BUFFER_SIZE 5
+#define POLLING_TIMEOUT 1000
+
 RouterServer  *RouterServer_create(RouterdConfig *config){
     check(config  != NULL, "Invalid config argument, is NULL");
     RouterServer *server = calloc(1, sizeof(RouterServer));
@@ -66,12 +71,15 @@ int RouterServer_init(RouterServer *server){
                 server->forward_domain_sock, server->forward_fd);
     
     // Setup epoll
+    struct epoll_event stdin_event = create_epoll_in_event(0); // listen to stdin for stop message
     struct epoll_event routing_event = create_epoll_in_event(server->routing_fd);
     struct epoll_event forward_event = create_epoll_in_event(server->forward_fd);
-    struct epoll_event events_to_handle[] = {routing_event, forward_event};
+    struct epoll_event events_to_handle[] = {stdin_event, routing_event, forward_event};
 
-    server->epoll_fd = setup_epoll(&events_to_handle, 2);
+    server->epoll_fd = setup_epoll(&events_to_handle, 3);
     check(server->epoll_fd != -1, "Failed to setup epoll");
+
+    RouterServer_log(server, "routerd is initialized in debug mode");
 
     return 1;
 
@@ -80,6 +88,57 @@ int RouterServer_init(RouterServer *server){
 }
 
 int RouterServer_run(RouterServer *server){
+    int rc = 0;
+    int running = 1;
+    int event_count = 0;
+    size_t bytes_read = 0;
+    char read_buffer[PACKET_BUFFER_SIZE];
+    struct epoll_event events[EVENTS_BUFFER_SIZE];
 
+    // [TODO] complete first route broadcast
+    //check(rc != -1, "Failed to complete mip arp");
+
+    while(running){
+        RouterServer_log(server," Polling...");
+        event_count = epoll_wait(server->epoll_fd, &events, EVENTS_BUFFER_SIZE, POLLING_TIMEOUT);
+
+        int i = 0;
+        for(i = 0; i < event_count; i++){
+            memset(read_buffer, '\0', PACKET_BUFFER_SIZE);
+
+            if(events[i].data.fd == server->routing_fd){
+                // [TODO] handle routing new routing table update
+                RouterServer_log(server, "Routing event");
+                continue;
+            }
+
+            // Raw socket event
+            else if(events[i].data.fd == server->forward_fd){
+                // [TODO] handle forward request from 
+                RouterServer_log(server, "Forward event");
+                continue;
+            }
+
+            bytes_read = read(events[i].data.fd, read_buffer, PACKET_BUFFER_SIZE);
+
+            // If the event is not a domain or raw socket and the bytes read is null.
+            // The event is a domain socket client. And if the bytes read are 0 the client has disconnected
+            if(bytes_read == 0){
+                // [TODO] should routed handle a disconnect
+                continue;
+            } else if(!strncmp(read_buffer, "stop\n", 5)){
+                running = 0;
+                log_info("Exiting...");
+            }
+
+        }
+        
+        // [TODO] do a table broadcast
+    }
+
+    return 1;
+
+    error:
+        return -1;
 }
 

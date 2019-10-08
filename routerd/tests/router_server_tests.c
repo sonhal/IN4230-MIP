@@ -44,6 +44,25 @@ char *test_RouterServer_init(){
 
 }
 
+char *test_RouterServer_run(){
+    int rc = 0;
+    RouterdConfig *config = RouterdConfig_create(argc, argv);
+    RouterServer  *server = RouterServer_create(config);
+
+
+    int r_fd = setup_domain_socket(&routing_so_name, argv[2], strlen(argv[2]));
+
+    int f_fd = setup_domain_socket(&forwarding_so_name, argv[3], strlen(argv[3]));
+
+    rc = RouterServer_init(server);
+    mu_assert(rc != -1, "Failed to init route server");
+
+    //rc = RouterServer_run(server);
+
+    RouterdConfig_destroy(config);
+    RouterServer_destroy(server);    
+}
+
 
 char *all_tests(){
 
@@ -51,6 +70,7 @@ char *all_tests(){
 
     mu_run_test(test_RouterServer_create);
     mu_run_test(test_RouterServer_init);
+    mu_run_test(test_RouterServer_run);
 
     if(routing_so_name.sun_path)unlink(routing_so_name.sun_path);
     if(forwarding_so_name.sun_path)unlink(forwarding_so_name.sun_path);
