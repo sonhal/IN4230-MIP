@@ -128,9 +128,8 @@ int RouterServer_run(RouterServer *server){
                 continue;
             } else if(!strncmp(read_buffer, "stop\n", 5)){
                 running = 0;
-                log_info("Exiting...");
+                printf("Exiting...\n");
             }
-
         }
         
         // [TODO] do a table broadcast
