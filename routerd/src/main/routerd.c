@@ -17,13 +17,15 @@ int main(int argc, char *argv[]){
     RouterServer *server = NULL;
 
     config = parse_args(argc, argv);
-    check_mem(config);
+    if(config == NULL) return 0;
 
     server = RouterServer_create(config);
     check_mem(server);
 
     rc = RouterServer_init(server);
     check(rc != -1, "Failed to initialize server");
+    rc = RouterServer_run(server);
+    check(rc != -1, "");
 
     clean_up(config, server);
     return 0;
