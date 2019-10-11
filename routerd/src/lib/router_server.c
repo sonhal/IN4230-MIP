@@ -8,6 +8,7 @@
 #include "../../../commons/src/dbg.h"
 #include "../../../commons/src/domain_socket.h"
 #include "../../../commons/src/polling.h"
+#include "forwarding_handler.h"
 
 
 #include "router_server.h"
@@ -96,7 +97,7 @@ int RouterServer_run(RouterServer *server){
     struct epoll_event events[EVENTS_BUFFER_SIZE];
 
     // [TODO] complete first route broadcast
-    //check(rc != -1, "Failed to complete mip arp");
+    //check(rc != -1, "Failed to complete routing broadcast");
 
     while(running){
         RouterServer_log(server," Polling...");
@@ -107,15 +108,18 @@ int RouterServer_run(RouterServer *server){
             memset(read_buffer, '\0', PACKET_BUFFER_SIZE);
 
             if(events[i].data.fd == server->routing_fd){
-                // [TODO] handle routing new routing table update
+                // [TODO] handle routing request from 
                 RouterServer_log(server, "Routing event");
+                bytes_read = recv(events[i].data.fd, read_buffer, PACKET_BUFFER_SIZE, 0);
                 continue;
             }
 
             // Raw socket event
-            else if(events[i].data.fd == server->forward_fd){
-                // [TODO] handle forward request from 
+            if(events[i].data.fd == server->forward_fd){
                 RouterServer_log(server, "Forward event");
+                MIP_ADDRESS result = handle_forwarding_request(server->table, server->forward_fd);
+                send_forwarding_response(server->forward_fd, result);
+                RouterServer_log(server, "Forward response sent - mip address: %d", result);
                 continue;
             }
 
