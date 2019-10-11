@@ -68,6 +68,8 @@ static inline MIPRouteEntry *MIPRouteTable_get(MIPRouteTable *table, MIP_ADDRESS
     return NULL;
 }
 
+MIP_ADDRESS MIPRouteTable_get_next_hop(MIPRouteTable *table, MIP_ADDRESS destination);
+
 void MIPRouteTable_update_routing(MIPRouteTable *table, MIPRouteTable *neighbor_table);
 
 void MIPRouteTable_print(MIPRouteTable *table);
