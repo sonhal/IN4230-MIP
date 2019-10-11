@@ -5,4 +5,6 @@
 
 #define MIP_ADDRESS uint8_t
 
+#define BYTE uint8_t
+
 #endif
