@@ -99,9 +99,9 @@ int main(int argc, char *argv[]){
     rc = add_to_table_to_epoll(epoll_fd, i_table);
     check(rc != -1, "Failed to add interfaces to epoll");
 
-    struct server_self *server = init_server_self(local_socket, i_table, u_config->is_debug, CACHE_UPDATE_FREQ_MILLI);
+    MIPDServer *server = MIPDServer_create(local_socket, i_table, u_config->is_debug, CACHE_UPDATE_FREQ_MILLI);
     // MAIN application loop
-    rc = start_server(server, epoll_fd, events, MAX_EVENTS, MAX_READ, 10000);
+    rc = MIPDServer_run(server, epoll_fd, events, MAX_EVENTS, MAX_READ, 10000);
     check(rc != -1, "epoll loop exited unexpectedly");
 
     clean_up(i_table, epoll_fd, &so_name, local_socket, raw_socket, u_config, events);
