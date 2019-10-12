@@ -9,6 +9,7 @@
 #include "../../../commons/src/domain_socket.h"
 #include "../../../commons/src/polling.h"
 #include "forwarding_handler.h"
+#include "routing_handler.h"
 
 
 #include "router_server.h"
@@ -108,17 +109,19 @@ int RouterServer_run(RouterServer *server){
             memset(read_buffer, '\0', PACKET_BUFFER_SIZE);
 
             if(events[i].data.fd == server->routing_fd){
-                // [TODO] handle routing request from 
                 RouterServer_log(server, "Routing event");
-                bytes_read = recv(events[i].data.fd, read_buffer, PACKET_BUFFER_SIZE, 0);
+                MIPRouteTable *neighbor_table = handle_route_request(server->table, events[i].data.fd);
+                check_mem(neighbor_table);
+                MIPRouteTable_update_routing(server->table, neighbor_table);
+                RouterServer_log(server, "Routing request handled - table from mip address: %d", neighbor_table->table_address);
                 continue;
             }
 
             // Raw socket event
             if(events[i].data.fd == server->forward_fd){
                 RouterServer_log(server, "Forward event");
-                MIP_ADDRESS result = handle_forwarding_request(server->table, server->forward_fd);
-                send_forwarding_response(server->forward_fd, result);
+                MIP_ADDRESS result = handle_forwarding_request(server->table, events[i].data.fd);
+                send_forwarding_response(events[i].data.fd, result);
                 RouterServer_log(server, "Forward response sent - mip address: %d", result);
                 continue;
             }
@@ -136,7 +139,11 @@ int RouterServer_run(RouterServer *server){
             }
         }
         
-        // [TODO] do a table broadcast
+        if(should_complete_route_broadcast(server)){
+            rc = broadcast_route_table(server->table, server->routing_fd);
+            check(rc != -1, "Failed to broadcast route table");
+            server->last_broadcast_milli = get_now_milli();
+        }
     }
 
     return 1;
