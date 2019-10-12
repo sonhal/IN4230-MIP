@@ -14,13 +14,7 @@
 
 
 
-void test_func(int i){
-    printf("Hello: %d\n", i);
-}
-
-char *test_create_event_handler(){
-    struct event_handler new_handler = create_event_handler(1, &test_func);
-    (*new_handler.handler_func)(10);
+char *test_func(){
     return NULL;
 }
 
@@ -29,7 +23,7 @@ char *all_tests(){
 
     mu_suite_start();
 
-    mu_run_test(test_create_event_handler);
+    mu_run_test(test_func);
 
     return NULL;
 }
