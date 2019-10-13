@@ -10,7 +10,7 @@
 #include "interface.h"
 #include "../../../commons/src/dbg.h"
 #include "link.h"
-#include "packaging/mip_packet.h"
+#include "packaging/mip_package.h"
 
 
 #define BUF_SIZE 1600
@@ -53,51 +53,51 @@ int last_inteface(struct sockaddr_ll *so_name){
 }
 
 
-int sendto_raw_mip_packet(int sd, struct sockaddr_ll *so_name, struct mip_packet *packet){
+int sendto_raw_mip_package(int sd, struct sockaddr_ll *so_name, MIPPackage *package){
     int rc = 0;
 
-    //Create raw packet
-    int total_packet_size = 0;
-    int payload_len_in_bytes = packet->m_header.payload_len * MIP_PAYLOAD_WORD;
-    total_packet_size = (sizeof(struct mip_packet) + payload_len_in_bytes);
-    BYTE *raw_packet = calloc(total_packet_size, sizeof(BYTE));
-    memcpy(raw_packet, packet, sizeof(struct mip_packet));
-    memcpy(&raw_packet[sizeof(struct mip_packet)], packet->message, payload_len_in_bytes);
+    //Create raw package
+    int total_package_size = 0;
+    int payload_len_in_bytes = package->m_header.payload_len * MIP_PAYLOAD_WORD;
+    total_package_size = (sizeof(MIPPackage) + payload_len_in_bytes);
+    BYTE *raw_package = calloc(total_package_size, sizeof(BYTE));
+    memcpy(raw_package, package, sizeof(MIPPackage));
+    memcpy(&raw_package[sizeof(MIPPackage)], package->message, payload_len_in_bytes);
 
     /* Send message */
-    rc = sendto(sd,raw_packet, total_packet_size, 0, so_name, sizeof(struct sockaddr_ll));
+    rc = sendto(sd,raw_package, total_package_size, 0, so_name, sizeof(struct sockaddr_ll));
     check(rc != -1, "Failed to send mip package");
 
-    free(raw_packet);
-    destroy_mip_packet(packet);
+    free(raw_package);
+    MIPPackage_destroy(package);
     return 0;
 
     error:
-        if(raw_packet)free(raw_packet);
-        destroy_mip_packet(packet);
+        if(raw_package)free(raw_package);
+        MIPPackage_destroy(package);
         return -1;
 }
 
-int recv_raw_mip_packet(int sd, struct mip_packet *packet){
+int recv_raw_mip_package(int sd, MIPPackage *package) {
     int rc = 0;
-    BYTE *raw_packet = calloc(1, MIP_PACKAGE_MAX_SIZE);
+    BYTE *raw_package = calloc(1, MIP_PACKAGE_MAX_SIZE);
 
-    rc = recv(sd, raw_packet, 188, 0);
+    rc = recv(sd, raw_package, 188, 0);
 
     // Create a tmp pointer to message as it will be overwritten durring read
-    BYTE *tmp_p = packet->message;
-    // Parse raw packet to mip_packet
-    memcpy(packet, raw_packet, sizeof(struct mip_packet));
-    int payload_len_in_bytes = packet->m_header.payload_len * MIP_PAYLOAD_WORD;
-    memcpy(tmp_p, &raw_packet[sizeof(struct mip_packet)], payload_len_in_bytes);
-    packet->message = tmp_p;
+    BYTE *tmp_p = package->message;
+    // Parse raw package to mip_package
+    memcpy(package, raw_package, sizeof(MIPPackage));
+    int payload_len_in_bytes = package->m_header.payload_len * MIP_PAYLOAD_WORD;
+    memcpy(tmp_p, &raw_package[sizeof(MIPPackage)], payload_len_in_bytes);
+    package->message = tmp_p;
 
-    check(rc != -1, "Failed to receive MIP packet");
-    free(raw_packet);
+    check(rc != -1, "Failed to receive MIP package");
+    free(raw_package);
     return rc;
 
     error:
-        if(raw_packet)free(raw_packet);
+        if(raw_package) free(raw_package);
         return -1;
 }
 

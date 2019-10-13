@@ -123,8 +123,8 @@ int complete_mip_arp(struct interface_table *table, struct mip_arp_cache *cache)
         struct sockaddr_ll *so_name = table->interfaces[i].so_name;
         int8_t *mac_addr = &table->interfaces[i].interface;
 
-        request_m_packet = create_mip_arp_request_packet(mip_addr, mac_addr);
-        rc = sendto_raw_mip_packet(socket, so_name, request_m_packet);
+        request_m_packet = MIPPackage_create_mip_arp_request_packet(mip_addr, mac_addr);
+        rc = sendto_raw_mip_package(socket, so_name, request_m_packet);
         check(rc != -1, "Failed to send arp package for interface");
     }
 

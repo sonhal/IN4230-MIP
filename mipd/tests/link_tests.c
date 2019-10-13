@@ -12,7 +12,7 @@
 #include "minunit.h"
 #include "../src/lib/link.h"
 #include "../src/lib/packaging/mip_header.h"
-#include "../src/lib/packaging/mip_packet.h"
+#include "../src/lib/packaging/mip_package.h"
 
 
 char *test_print_interface_list(){
@@ -58,9 +58,9 @@ char *test_sendto_mip_packet(){
     struct ether_frame *e_frame = create_ethernet_frame(&so_name->sll_addr, &so_name[0]);
     struct mip_header *m_header = create_arp_request_mip_header(255);
     const BYTE *message = "HELLO";
-    struct mip_packet *packet = create_mip_packet(e_frame, m_header, message, strlen("Message"));
+    struct mip_packet *packet = MIPPackage_create(e_frame, m_header, message, strlen("Message"));
     
-    rc = sendto_raw_mip_packet(raw_socket, &so_name[0], packet);
+    rc = sendto_raw_mip_package(raw_socket, &so_name[0], packet);
     mu_assert(rc != -1, "Failed to send packet");
 
     //rc = recv(raw_socket, buffer, 1024, 0);
