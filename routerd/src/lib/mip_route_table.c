@@ -96,7 +96,7 @@ void MIPRouteTable_update_routing(MIPRouteTable *table, MIPRouteTable *neighbor_
         MIPRouteEntry *champion = MIPRouteTable_get(table, challenger->destination);
 
         // New never before seen node, add to table
-        if(champion == NULL || challenger->cost + 1 < champion->cost){
+        if(champion == NULL || (challenger->cost + 1) < champion->cost){
             MIPRouteTable_update(table, challenger->destination, neighbor_table->table_address, challenger->cost + 1);
         }
     }
@@ -179,8 +179,7 @@ int MIPRouteTable_remove_old_entries(MIPRouteTable *table){
     LIST_FOREACH(table->entries, first, next, cur){
         MIPRouteEntry *entry = cur->value;
         if(MIPRouteEntry_to_old(entry) && entry->next_hop != 255){
-            rc = MIPRouteTable_remove(table, entry->destination);
-            check(rc != -1, "Failed to remove old MIP route table entry");
+            List_remove(table->entries, cur);
             num_removed++;
         }
     }
