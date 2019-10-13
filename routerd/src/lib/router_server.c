@@ -28,7 +28,8 @@ RouterServer  *RouterServer_create(RouterdConfig *config){
     server->last_broadcast_milli = 0;
 
     // Instantiate routing table and add local mip addresses
-    server->table = MIPRouteTable_create(List_pop(config->mip_addresses));
+    MIP_ADDRESS *first = List_pop(config->mip_addresses);
+    server->table = MIPRouteTable_create(*first);
     LIST_FOREACH(config->mip_addresses, first, next, cur){
         MIP_ADDRESS *address = cur->value;
         MIPRouteTable_update(server->table, *address, 255, 0);
@@ -143,6 +144,11 @@ int RouterServer_run(RouterServer *server){
             rc = broadcast_route_table(server->table, server->routing_fd);
             check(rc != -1, "Failed to broadcast route table");
             server->last_broadcast_milli = get_now_milli();
+        }
+
+        if(RouterServer_is_debug_active(server)){
+            RouterServer_log(server, "Route table:");
+            MIPRouteTable_print(server->table);
         }
     }
 
