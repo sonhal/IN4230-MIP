@@ -1,16 +1,18 @@
 #include <stdint.h>
 #include "../lib/packaging/mip_header.h"
 
-struct user_config {
+typedef struct UserConfig {
     int is_debug;
     char *app_socket;
+    char *route_socket;
+    char *forward_socket;
     MIP_ADDRESS *mip_addresses;
-    int64_t num_mip_addresses;
-};
+    size_t num_mip_addresses;
+} UserConfig;
 
 
-struct user_config *create_user_config(uint64_t n_interfaces);
+UserConfig *UserConfig_create(size_t n_interfaces);
 
-int destroy_user_config(struct user_config *config);
+void UserConfig_destroy(UserConfig*config);
 
-struct user_config *handle_user_config(int argc, char *argv[], uint64_t n_interfaces);
+UserConfig *UserConfig_from_cli(int argc, char *argv[], size_t n_interfaces);
