@@ -124,7 +124,6 @@ struct interface_table *create_loaded_interface_table(){
     struct sockaddr_ll *so_names = calloc(INTERFACE_BUFF_SIZE, SOCKET_ADDR_SIZE);
     struct interface_table *table = create_interface_table();
     num_i = collect_intefaces(so_names, INTERFACE_BUFF_SIZE);
-    debug("Colleced %d interfaces", num_i);
 
     for(i = 0; i < num_i; i++){
         rc = append_interface_table(table, &so_names[i]);
