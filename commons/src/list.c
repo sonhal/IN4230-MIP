@@ -83,7 +83,7 @@ void *List_shift(List *list){
 void *List_remove(List *list, ListNode *node){
     void *result = NULL;
     check(list->first && list->last, "List is empty");
-    check(node, "node cannot be NULL");
+    check(node != NULL, "node cannot be NULL");
 
     if(node == list->first && node == list->last){
         list->first = NULL;

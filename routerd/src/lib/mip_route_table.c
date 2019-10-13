@@ -53,6 +53,7 @@ int MIPRouteTable_update(MIPRouteTable *table, MIP_ADDRESS destination, MIP_ADDR
     return 0;
 }
 
+
 // Removes entry with destination from table, returns 1 if successful, -1 if entry could not be found
 int MIPRouteTable_remove(MIPRouteTable *table, MIP_ADDRESS destination) {
 
@@ -179,7 +180,8 @@ int MIPRouteTable_remove_old_entries(MIPRouteTable *table){
     LIST_FOREACH(table->entries, first, next, cur){
         MIPRouteEntry *entry = cur->value;
         if(MIPRouteEntry_to_old(entry) && entry->next_hop != 255){
-            List_remove(table->entries, cur);
+            rc =MIPRouteTable_remove(table, entry->destination);
+            check(rc != -1, "Failed to remove to old table entry\tdestination address: %d", entry->destination)
             num_removed++;
         }
     }
