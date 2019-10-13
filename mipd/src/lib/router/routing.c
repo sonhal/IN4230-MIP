@@ -39,6 +39,7 @@ MIPRouteTablePackage *parse_broadcasted_table(MIPPackage *package){
         return NULL;
 }
 
+
 int broadcast_route_table(MIPDServer *server, MIPRouteTablePackage *table_package){
     int rc = 0;
     uint8_t ether_broadcast_address[] = ETH_BROADCAST_ADDR;
@@ -48,6 +49,7 @@ int broadcast_route_table(MIPDServer *server, MIPRouteTablePackage *table_packag
     int i = 0;
     for(i = 0; i < server->i_table->size; i++){
         table_package->table_address = server->i_table->interfaces[i].mip_address;
+
         MIPDServer_log(server, "Broadcasting route table\tnum_entries: %d\tmip address: %d", table_package->num_entries, table_package->table_address);
         MIPPackage *package = MIPPackage_create_raw(server->i_table->interfaces[i].mip_address,
                                                     server->i_table->interfaces[i].interface,

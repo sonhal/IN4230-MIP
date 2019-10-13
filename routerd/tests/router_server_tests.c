@@ -50,14 +50,14 @@ char *test_RouterServer_run(){
     RouterServer  *server = RouterServer_create(config);
 
 
-    //int r_fd = setup_domain_socket(&routing_so_name, argv[2], strlen(argv[2]));
+    int r_fd = setup_domain_socket(&routing_so_name, argv[2], strlen(argv[2]));
 
-    //int f_fd = setup_domain_socket(&forwarding_so_name, argv[3], strlen(argv[3]));
+    int f_fd = setup_domain_socket(&forwarding_so_name, argv[3], strlen(argv[3]));
 
     rc = RouterServer_init(server);
     mu_assert(rc != -1, "Failed to init route server");
 
-    rc = RouterServer_run(server);
+    //rc = RouterServer_run(server);
 
     RouterdConfig_destroy(config);
     RouterServer_destroy(server);    

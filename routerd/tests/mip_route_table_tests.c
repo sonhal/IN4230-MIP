@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "../../commons/src/dbg.h"
 #include "minunit.h"
 #include "../src/lib/mip_route_table.h"
@@ -26,17 +28,20 @@ char *test_MIPRouteTable_update() {
 char *test_MIPRouteTable_dvr(){
     MIPRouteTable *table1 = MIPRouteTable_create();
     MIPRouteTable *table2 = MIPRouteTable_create();
+    table2->table_address = 2;
 
     MIPRouteTable_update(table1, 1, 255, 0);
     MIPRouteTable_update(table1, 2, 2, 1);
     MIPRouteTable_update(table1, 3, 3, 5);
 
-    MIPRouteTable_update(table1, 2, 255, 0);
+    MIPRouteTable_update(table2, 2, 255, 0);
     MIPRouteTable_update(table2, 1, 1, 1);
     MIPRouteTable_update(table2, 3, 3, 1);
 
     MIPRouteTable_update_routing(table1, table2);
 
+    printf("table1:\n");
+    MIPRouteTable_print(table1);
     mu_assert(MIPRouteTable_get_next_hop(table1, 3) == 2, "Wrong route to node 3");
 
     MIPRouteTable_destroy(table1);
@@ -48,9 +53,9 @@ char *test_MIPRouteTable_dvr(){
 char *test_MIPRouteTable_print(){
     MIPRouteTable *table = MIPRouteTable_create();
 
-    MIPRouteTable_update(table, 2, 2, 1);
-    MIPRouteTable_update(table, 3, 3, 5);
-    MIPRouteTable_update(table, 4, 3, 1);
+    MIPRouteTable_update(table, 110, 255, 1);
+    MIPRouteTable_update(table, 25, 3, 5);
+    MIPRouteTable_update(table, 40, 3, 1);
 
     MIPRouteTable_print(table);
 
@@ -81,8 +86,30 @@ char *test_MIPRouteTable_create_package(){
     mu_assert(MIPRouteTable_get_next_hop(table, 4) == MIPRouteTable_get_next_hop(table2, 4), "Failed to convert package to table");
 
     MIPRouteTable_destroy(table);
-    MIPRouteTable_destroy(table);
+    MIPRouteTable_destroy(table2);
     MIPRouteTablePackage_destroy(package);
+
+    return NULL;
+}
+
+char *test_MIPRouteTable_remove_old_entries(){
+    MIPRouteTable *table = MIPRouteTable_create();
+    table->entry_max_age_milli = 0;
+
+    MIPRouteTable_update(table, 1, 255, 0);
+    MIPRouteTable_update(table, 2, 2, 1);
+    MIPRouteTable_update(table, 3, 3, 5);
+    MIPRouteTable_update(table, 4, 3, 1);
+
+    sleep(1);
+
+    MIPRouteTable_remove_old_entries(table);
+
+    mu_assert(table->entries->count == 1, "Number of addresses in table is not 1");
+
+    MIPRouteTable_destroy(table);
+
+    return NULL;
 }
 
 
@@ -95,6 +122,7 @@ char *all_tests(){
     mu_run_test(test_MIPRouteTable_dvr);
     mu_run_test(test_MIPRouteTable_print);
     mu_run_test(test_MIPRouteTable_create_package);
+    mu_run_test(test_MIPRouteTable_remove_old_entries);
 
 
     return NULL;
