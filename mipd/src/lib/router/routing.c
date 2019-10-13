@@ -15,6 +15,7 @@ void poison_reverse(MIPRouteTablePackage *package, MIP_ADDRESS destination){
     for(i = 0; i < package->num_entries; i++){
         if(package->entries[i].next_hop == destination){
             package->entries[i].cost = UINT_MAX;
+            printf("package poisoned: destination: %d\tcost: %u", package->entries[i].cost);
         }
     }
 }

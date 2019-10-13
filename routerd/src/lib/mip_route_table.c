@@ -6,15 +6,6 @@
 #include "mip_route_table.h"
 
 
-void poison_reverse(MIPRouteTablePackage *package, MIP_ADDRESS destination){
-    int i = 0;
-    for(i = 0; i < package->num_entries; i++){
-        if(package->entries[i].next_hop == destination){
-            package->entries[i].cost = UINT_MAX;
-        }
-    }
-}
-
 MIPRouteEntry *MIPRouteEntry_create(MIP_ADDRESS destination, MIP_ADDRESS next_hop, unsigned int cost){
     check(destination <= MIP_BROADCAST_ADDRESS, "Invalid address for a MIPRouteTable");
 
@@ -119,12 +110,13 @@ void MIPRouteTable_update_routing(MIPRouteTable *table, MIPRouteTable *neighbor_
 
         MIPRouteEntry *champion = MIPRouteTable_get(table, challenger->destination);
 
-        // New never before seen node, add to table. If the node has cost of unit max it is a posioned reverse
+        // New never before seen node, add to table. If the node has cost of unit max it is a poisoned reverse
         if((champion == NULL || (challenger->cost + 1) <= champion->cost) && challenger->cost != UINT_MAX){
             MIPRouteTable_update(table, challenger->destination, neighbor_table->table_address, (challenger->cost + 1));
         }
     }
 
+    // Fall trough
     error:
         return;
 }

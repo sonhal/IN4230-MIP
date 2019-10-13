@@ -79,6 +79,4 @@ void MIPRouteTable_print(MIPRouteTable *table);
 // Removes entries that are older than max age, retuns number of entries removed on success, -1 on failure
 int MIPRouteTable_remove_old_entries(MIPRouteTable *table);
 
-void poison_reverse(MIPRouteTablePackage *package, MIP_ADDRESS destination);
-
 #endif
