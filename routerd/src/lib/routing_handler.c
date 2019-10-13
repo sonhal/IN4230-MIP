@@ -1,4 +1,6 @@
 
+#include <unistd.h>
+
 #include "../../../commons/src/dbg.h"
 #include "../../../commons/src/time_commons.h"
 
@@ -6,10 +8,13 @@
 #include "router_server.h"
 
 int broadcast_route_table(MIPRouteTable *table, int socket){
+    int rc = 0;
     MIPRouteTablePackage *package = MIPRouteTable_create_package(table);
-     int rc = 0;
+    check_mem(package);
 
-    rc = send(socket, package, sizeof(MIPRouteTablePackage), 0);
+    printf("sending route table packet with num entries %d\n", package->num_entries);
+    rc = write(socket, package, sizeof(MIPRouteTablePackage));
+    printf("sendt route table packet of size: %d\n", rc);
     check(rc != -1, "Failed to send forwarding response");
 
     MIPRouteTablePackage_destroy(package);
