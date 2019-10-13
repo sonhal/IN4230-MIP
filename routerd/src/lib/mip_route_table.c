@@ -29,6 +29,7 @@ MIPRouteTable *MIPRouteTable_create(){
     check_mem(table);
     table->entries = List_create();
     check_mem(table->entries);
+    table->table_address = 0;
 
     return table;
 
@@ -131,7 +132,7 @@ void MIPRouteTable_print(MIPRouteTable *table){
 MIPRouteTablePackage *MIPRouteTable_create_package(MIPRouteTable *table){
     check(table->entries->count < MIP_TABLE_PACKAGE_ENTRIES_MAX_SIZE, "MIP Routing table is to large");
     MIPRouteTablePackage *package = calloc(1, sizeof(MIPRouteTablePackage));
-    package->table_address = table->table_address;
+    package->table_address = 0;
     
     int i = 0;
     LIST_FOREACH(table->entries, first, next, cur){
@@ -154,7 +155,9 @@ MIPRouteTable *MIPRouteTablePackage_create_table(MIPRouteTablePackage *package){
     printf("received table package\tnum entries: %d\tsrc mip: %d\n",package->num_entries, package->table_address);
     check(package->num_entries < MIP_TABLE_PACKAGE_ENTRIES_MAX_SIZE, "MIP Routing table package is to large");
 
-    MIPRouteTable *table = MIPRouteTable_create(package->table_address);
+    MIPRouteTable *table = MIPRouteTable_create();
+    table->table_address = package->table_address;
+
     for (int i = 0; i < package->num_entries; i++)
     {
         MIPRoutePackageEntry current =  package->entries[i];
