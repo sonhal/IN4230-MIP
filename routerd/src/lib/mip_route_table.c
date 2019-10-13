@@ -147,7 +147,7 @@ MIPRouteTablePackage *MIPRouteTable_create_package(MIPRouteTable *table){
 }
 
 MIPRouteTable *MIPRouteTablePackage_create_table(MIPRouteTablePackage *package){
-    printf("received table package\tnum entries: %d\tsrc mip: %d",package->num_entries, package->table_address);
+    printf("received table package\tnum entries: %d\tsrc mip: %d\n",package->num_entries, package->table_address);
     check(package->num_entries < MIP_TABLE_PACKAGE_ENTRIES_MAX_SIZE, "MIP Routing table package is to large");
 
     MIPRouteTable *table = MIPRouteTable_create(package->table_address);
