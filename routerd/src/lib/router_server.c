@@ -150,6 +150,7 @@ int RouterServer_run(RouterServer *server){
             RouterServer_log(server, "Route table:");
             MIPRouteTable_print(server->table);
         }
+        MIPRouteTable_remove_old_entries(server->table);
     }
 
     return 1;

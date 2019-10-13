@@ -162,3 +162,31 @@ MIPRouteTable *MIPRouteTablePackage_create_table(MIPRouteTablePackage *package){
     error:
         return NULL;
 }
+
+// Return 1 if entry is to old, 0 if it is not
+int MIPRouteEntry_to_old(MIPRouteEntry *entry){
+    long current_time = get_now_milli();
+    long last_update = entry->last_updated_milli;;
+    if(current_time - last_update > MIP_TABLE_ENTRY_MAX_AGE_MILLI) return 1;
+    return 0;
+}
+
+
+int MIPRouteTable_remove_old_entries(MIPRouteTable *table){
+    int rc = 0;
+    int num_removed = 0;
+
+    LIST_FOREACH(table->entries, first, next, cur){
+        MIPRouteEntry *entry = cur->value;
+        if(MIPRouteEntry_to_old(entry) && entry->next_hop != 255){
+            rc = MIPRouteTable_remove(table, entry->destination);
+            check(rc != -1, "Failed to remove old MIP route table entry");
+            num_removed++;
+        }
+    }
+
+    return num_removed;
+
+    error:
+        return -1;
+}

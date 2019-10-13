@@ -9,6 +9,7 @@
 #define MIP_ADDRESS uint8_t
 #define MIP_BROADCAST_ADDRESS 255
 #define MIP_TABLE_PACKAGE_ENTRIES_MAX_SIZE 64
+#define MIP_TABLE_ENTRY_MAX_AGE_MILLI 5000
 
 typedef struct MIPRouteEntry {
     MIP_ADDRESS destination;
@@ -73,5 +74,8 @@ MIP_ADDRESS MIPRouteTable_get_next_hop(MIPRouteTable *table, MIP_ADDRESS destina
 void MIPRouteTable_update_routing(MIPRouteTable *table, MIPRouteTable *neighbor_table);
 
 void MIPRouteTable_print(MIPRouteTable *table);
+
+// Removes entries that are older than max age, retuns number of entries removed on success, -1 on failure
+int MIPRouteTable_remove_old_entries(MIPRouteTable *table);
 
 #endif
