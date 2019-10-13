@@ -36,4 +36,7 @@ int app_server(int so, char *socket_name, int socket_name_size);
 int parse_domain_socket_request(char *buffer, uint8_t *mip_addr, char *message);
 
 struct ping_message *parse_ping_request(BYTE *buffer);
+
+int read_from_domain_socket(int socket_fd, BYTE *buffer, size_t buffer_size);
+
 #endif

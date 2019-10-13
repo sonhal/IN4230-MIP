@@ -145,3 +145,16 @@ struct ping_message *parse_ping_request(BYTE *buffer){
     memcpy(request, buffer, sizeof(struct ping_message));
     return request;
 }
+
+// returns bytes read into buffer on success, -1 on failure and 0 if connection is closed.
+int read_from_domain_socket(int socket_fd, BYTE *buffer, size_t buffer_size){
+    int rc = 0;
+
+    rc = read(socket_fd, buffer, buffer_size);
+    check(rc != -1, "Failed to receive packet on domain socket: %d", socket_fd);
+
+    return rc;
+
+    error:
+        return -1;
+}
