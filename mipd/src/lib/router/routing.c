@@ -1,3 +1,4 @@
+#include <limits.h>
 
 #include "../../../../routerd/src/lib/mip_route_table.h"
 #include "../../../../commons/src/dbg.h"
@@ -8,6 +9,15 @@
 #include "../server.h"
 #include "../interface.h"
 #include "../link.h"
+
+void poison_reverse(MIPRouteTablePackage *package, MIP_ADDRESS destination){
+    int i = 0;
+    for(i = 0; i < package->num_entries; i++){
+        if(package->entries[i].next_hop == destination){
+            package->entries[i].cost = UINT_MAX;
+        }
+    }
+}
 
 
 MIPRouteTablePackage *recv_table_to_be_broadcasted(int socket_fd){
@@ -43,19 +53,21 @@ MIPRouteTablePackage *parse_broadcasted_table(MIPPackage *package){
 int broadcast_route_table(MIPDServer *server, MIPRouteTablePackage *table_package){
     int rc = 0;
     uint8_t ether_broadcast_address[] = ETH_BROADCAST_ADDR;
-
-    
+    MIPRouteTablePackage *tmp = calloc(1, sizeof(MIPRouteTablePackage));
 
     int i = 0;
     for(i = 0; i < server->i_table->size; i++){
-        table_package->table_address = server->i_table->interfaces[i].mip_address;
 
-        MIPDServer_log(server, "Broadcasting route table\tnum_entries: %d\tmip address: %d", table_package->num_entries, table_package->table_address);
+        memcpy(tmp, table_package, sizeof(MIPRouteTablePackage));
+        tmp->table_address = server->i_table->interfaces[i].mip_address;
+        poison_reverse(tmp, server->i_table->interfaces[i].mip_address);
+
+        MIPDServer_log(server, "Broadcasting route table\tnum_entries: %d\tmip address: %d", tmp->num_entries, tmp->table_address);
         MIPPackage *package = MIPPackage_create_raw(server->i_table->interfaces[i].mip_address,
                                                     server->i_table->interfaces[i].interface,
                                                     255,
                                                     ether_broadcast_address,
-                                                    (BYTE *)table_package,
+                                                    (BYTE *)tmp,
                                                     sizeof(MIPRouteTablePackage),
                                                     2);
 
@@ -67,9 +79,11 @@ int broadcast_route_table(MIPDServer *server, MIPRouteTablePackage *table_packag
     }
 
     MIPRouteTablePackage_destroy(table_package);
+    MIPRouteTablePackage_destroy(tmp);
     return 0;
 
     error:
+        MIPRouteTablePackage_destroy(tmp);
         MIPRouteTablePackage_destroy(table_package);
         return -1;
 }

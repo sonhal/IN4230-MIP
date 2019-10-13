@@ -6,6 +6,15 @@
 #include "mip_route_table.h"
 
 
+void poison_reverse(MIPRouteTablePackage *package, MIP_ADDRESS destination){
+    int i = 0;
+    for(i = 0; i < package->num_entries; i++){
+        if(package->entries[i].next_hop == destination){
+            package->entries[i].cost = UINT_MAX;
+        }
+    }
+}
+
 MIPRouteEntry *MIPRouteEntry_create(MIP_ADDRESS destination, MIP_ADDRESS next_hop, unsigned int cost){
     check(destination <= MIP_BROADCAST_ADDRESS, "Invalid address for a MIPRouteTable");
 
@@ -200,7 +209,6 @@ int MIPRouteTable_remove_old_entries(MIPRouteTable *table){
     LIST_FOREACH(table->entries, first, next, cur){      
         MIPRouteEntry *entry = cur->value;
         check(entry != NULL, "Invalid entry - entry=NULL");
-        printf("entry: nr: %d\tdst: %d\tnext_hop: %d\tcost: %d\n", i, entry->destination, entry->next_hop, entry->cost);
 
         if(MIPRouteEntry_to_old(table, entry) && entry->next_hop != 255){
             MIPRouteEntry_destroy(entry);
@@ -212,18 +220,9 @@ int MIPRouteTable_remove_old_entries(MIPRouteTable *table){
     }
     List_destroy(table->entries);
     table->entries = new_list;
-    
+
     return num_removed;
 
     error:
         return -1;
-}
-
-void poison_reverse(MIPRouteTablePackage *package, MIP_ADDRESS destination){
-    int i = 0;
-    for(i = 0; i < package->num_entries; i++){
-        if(package->entries[i].next_hop == destination){
-            package->entries[i].cost = UINT_MAX;
-        }
-    }
 }
