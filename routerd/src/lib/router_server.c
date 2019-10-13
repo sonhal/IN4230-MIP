@@ -17,7 +17,7 @@
 
 #define PACKET_BUFFER_SIZE 1000
 #define EVENTS_BUFFER_SIZE 5
-#define POLLING_TIMEOUT 1000
+#define POLLING_TIMEOUT 5000
 
 RouterServer  *RouterServer_create(RouterdConfig *config){
     check(config  != NULL, "Invalid config argument, is NULL");

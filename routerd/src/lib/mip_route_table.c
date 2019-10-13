@@ -136,9 +136,9 @@ MIPRouteTablePackage *MIPRouteTable_create_package(MIPRouteTable *table){
         package->entries[i].destination = current->destination;
         package->entries[i].next_hop = current->next_hop;
         package->entries[i].cost = current->cost;
-        package->num_entries++;
         i++;
     }
+    package->num_entries = i;
 
     return package;
 

@@ -32,7 +32,7 @@ typedef struct MIPRoutePackageEntry {
 struct MIPRouteTablePackage {
     MIP_ADDRESS table_address;
     MIPRoutePackageEntry entries[MIP_TABLE_PACKAGE_ENTRIES_MAX_SIZE];
-    size_t num_entries;
+    uint8_t num_entries;
 }__attribute__((packed));
 
 typedef struct MIPRouteTablePackage MIPRouteTablePackage;
