@@ -239,8 +239,17 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
             // New request from routerd to broadcast route table
             else if(events[i].data.fd == server->route_socket->connected_socket_fd)
             {
-                rc = broadcast_route_table(server, events[i].data.fd);
-                check(rc != -1, "Failed to broadcast route table");
+                MIPRouteTablePackage *table_package = calloc(1, sizeof(MIPRouteTablePackage));
+                check_mem(table_package);
+                rc = read_from_domain_socket(events[i].data.fd , table_package, sizeof(MIPRouteTablePackage));
+                check(rc != -1, "Failed to read route table package from routerd");
+                if(rc == 0){
+                    handle_domain_socket_disconnect(server, &events[i]);
+                    server->route_socket->connected_socket_fd = -1;
+                } else {
+                    rc = broadcast_route_table(server, table_package);
+                    check(rc != -1, "Failed to broadcast route table");   
+                }
                 continue;
             }
 
@@ -248,7 +257,15 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
             else if(events[i].data.fd == server->forward_socket->connected_socket_fd)
             {
                 MIPDServer_log(server, "Route forward event");
-                bytes_read = read(events[i].data.fd, read_buffer, read_buffer_size);
+                rc = read_from_domain_socket(events[i].data.fd , read_buffer, read_buffer_size);
+                check(rc != -1, "Failed to read route forward response from routerd");
+
+                if(rc == 0){
+                    handle_domain_socket_disconnect(server, &events[i]);
+                    server->forward_socket->connected_socket_fd = -1;
+                } else {
+                    // [TODO] handle forward response   
+                }
                 continue;
             }
 
@@ -266,6 +283,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
 
                 if(bytes_read == 0){
                     handle_domain_socket_disconnect(server, &events[i]);
+                    server->app_socket->connected_socket_fd = -1;
                 } else {
                     rc = handle_domain_socket_request(server, bytes_read, read_buffer);
                     check(rc != -1, "Failed to handle domain socket event");

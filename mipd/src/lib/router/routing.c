@@ -39,11 +39,9 @@ MIPRouteTablePackage *parse_broadcasted_table(MIPPackage *package){
         return NULL;
 }
 
-int broadcast_route_table(MIPDServer *server, int socket_fd){
+int broadcast_route_table(MIPDServer *server, MIPRouteTablePackage *table_package){
     int rc = 0;
 
-    MIPRouteTablePackage *table_package = recv_table_to_be_broadcasted(socket_fd);
-    check_mem(table_package);
     uint8_t ether_broadcast_address[] = ETH_BROADCAST_ADDR;
 
     int i = 0;
