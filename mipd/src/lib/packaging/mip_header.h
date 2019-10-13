@@ -14,6 +14,8 @@ struct mip_header {
 
 struct mip_header *create_arp_request_mip_header(MIP_ADDRESS src_addr);
 
+struct mip_header *create_route_broadcast_mip_header(MIP_ADDRESS src_addr);
+
 struct mip_header *create_arp_response_mip_header(MIP_ADDRESS src_addr, struct mip_header *arp_request);
 
 struct mip_header *create_transport_mip_header(MIP_ADDRESS src_addr, MIP_ADDRESS dest_addr);

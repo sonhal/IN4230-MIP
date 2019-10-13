@@ -19,6 +19,18 @@ struct mip_header *create_arp_request_mip_header(MIP_ADDRESS src_addr){
     return header;
 }
 
+struct mip_header *create_route_broadcast_mip_header(MIP_ADDRESS src_addr){
+    struct mip_header *header;
+    header = calloc(1, sizeof(struct mip_header));
+    header->tra = 2;
+    header->ttl = 15;
+    header->payload_len = 0;
+    header->dst_addr = 255;
+    header->src_addr = src_addr;
+
+    return header;
+}
+
 
 // Returns heap allocated MIP header ready for use as a response to a ARP request
 struct mip_header *create_arp_response_mip_header(MIP_ADDRESS src_addr, struct mip_header *arp_request){
