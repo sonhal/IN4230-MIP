@@ -11,12 +11,12 @@
 
 #include "../../../commons/src/dbg.h"
 #include "../../../commons/src/application.h"
+#include "app_connection.h"
 
-#include "packaging/mip_packet.h"
+#include "packaging/mip_package.h"
 
 #define BUF_SIZE 256
 
-void server(int l_so, struct sockaddr_un *so_name);
 
 // Sets up a socket wit the given file name
 int create_domain_socket(){
@@ -31,6 +31,72 @@ int create_domain_socket(){
         if (so) close(so);
         return -1;
 }
+
+int create_domain_socket_of_type(enum __socket_type type){
+    int so = 0;
+
+    so = socket(AF_UNIX, type, 0);
+    check(so != -1, "Creating socket failed");
+    debug("Domain socket created: %d", so);
+    return so;
+
+    error:
+        if (so) close(so);
+        return -1;
+}
+
+
+void LocalSocket_destroy(LocalSocket *local_socket){
+    if(local_socket){
+        close(local_socket->listening_socket_fd);
+        close(local_socket->connected_socket_fd);
+        if(local_socket->so_name) {
+            unlink(local_socket->so_name->sun_path);
+            free(local_socket->so_name);
+        }
+        free(local_socket);
+    }
+}
+
+LocalSocket *LocalSocket_create(char *path, enum __socket_type socket_type){
+    int rc = 0;
+    LocalSocket *local_socket = calloc(1, sizeof(LocalSocket));
+    local_socket->so_name = calloc(1, sizeof(struct sockaddr_un));
+    local_socket->connected_socket_fd = -1;
+    size_t path_len = strnlen(path, 255);
+
+    check(path_len <= sizeof(local_socket->so_name->sun_path), "path len is to large");
+
+    local_socket->listening_socket_fd = create_domain_socket_of_type(socket_type);
+
+    // Zero out the name struct
+    memset(local_socket->so_name , 0, sizeof(struct sockaddr_un));
+
+    // Prepare UNIX socket name
+    local_socket->so_name ->sun_family = AF_UNIX;
+    strncpy(local_socket->so_name->sun_path, path, sizeof(local_socket->so_name->sun_path) - 1);
+
+    // Delete socket file if it already exists
+    unlink(local_socket->so_name->sun_path);
+
+    /* Bind socket to socket name (file path)
+       What happes if we pass &so_name? */
+    rc = bind(local_socket->listening_socket_fd, (const struct sockaddr*)local_socket->so_name, sizeof(struct sockaddr_un));
+    check(rc != -1, "Binding socket to local address failed");
+
+    if( socket_type == SOCK_STREAM){
+        // Listen for connections
+        rc = listen(local_socket->listening_socket_fd, 5);
+        check(rc != -1, "Failed to start listen");
+    }
+
+    return local_socket;
+
+    error:
+        LocalSocket_destroy(local_socket);
+        return NULL;
+}
+
 
 int setup_domain_socket(struct sockaddr_un *so_name, char *socket_name, unsigned int socket_name_size){
     int so = 0;
