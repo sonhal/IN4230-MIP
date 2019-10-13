@@ -6,27 +6,30 @@
 
 
 MIPRouteEntry *MIPRouteEntry_create(MIP_ADDRESS destination, MIP_ADDRESS next_hop, int cost){
+    check(destination <= MIP_BROADCAST_ADDRESS, "Invalid address for a MIPRouteTable");
+
     MIPRouteEntry *entry = calloc(1, sizeof(MIPRouteEntry));
     entry->cost = cost;
     entry->destination = destination;
     entry->next_hop = next_hop;
     entry->last_updated_milli = get_now_milli();
     return entry;
+
+    error:
+        return NULL;
 }
 
 MIPRouteEntry *MIPRouteEntry_destroy(MIPRouteEntry *entry){
     if(entry) free(entry);
 }
 
-MIPRouteTable *MIPRouteTable_create(MIP_ADDRESS table_address){
-    check(table_address < MIP_BROADCAST_ADDRESS, "Invalid address for a MIPRouteTable");
+MIPRouteTable *MIPRouteTable_create(){
 
     MIPRouteTable *table = calloc(1, sizeof(MIPRouteTable));
-    table->entries = calloc(1, sizeof(List));
+    check_mem(table);
+    table->entries = List_create();
+    check_mem(table->entries);
 
-    //Add route to itself
-    MIPRouteTable_update(table, table_address, 255, 0);
-    table->table_address = table_address;
     return table;
 
     error:
@@ -61,12 +64,12 @@ int MIPRouteTable_remove(MIPRouteTable *table, MIP_ADDRESS destination) {
         if(table->entries->count == 0) return 1;
 
         LIST_FOREACH(table->entries, first, next, cur){
-        MIPRouteEntry *current = cur->value;
-        check(current != NULL, "Invalid value from table, current is NULL");
+            MIPRouteEntry *current = cur->value;
+            check(current != NULL, "Invalid value from table, current is NULL");
 
-        if(current->destination == destination){
-            List_remove(table->entries, cur);
-            return 1;
+            if(current->destination == destination){
+                List_remove(table->entries, cur);
+                return 1;
         }
     }
 
@@ -155,7 +158,8 @@ MIPRouteTable *MIPRouteTablePackage_create_table(MIPRouteTablePackage *package){
     for (int i = 0; i < package->num_entries; i++)
     {
         MIPRoutePackageEntry current =  package->entries[i];
-        MIPRouteTable_update(table, current.destination, current.next_hop, current.cost);
+        MIPRouteEntry *entry = MIPRouteEntry_create(current.destination, current.next_hop, current.cost);
+        List_push(table->entries, entry);
     }
 
     return table;
@@ -180,7 +184,7 @@ int MIPRouteTable_remove_old_entries(MIPRouteTable *table){
     LIST_FOREACH(table->entries, first, next, cur){
         MIPRouteEntry *entry = cur->value;
         if(MIPRouteEntry_to_old(entry) && entry->next_hop != 255){
-            rc =MIPRouteTable_remove(table, entry->destination);
+            rc = MIPRouteTable_remove(table, entry->destination);
             check(rc != -1, "Failed to remove to old table entry\tdestination address: %d", entry->destination)
             num_removed++;
         }

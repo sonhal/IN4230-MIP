@@ -39,7 +39,7 @@ struct MIPRouteTablePackage {
 typedef struct MIPRouteTablePackage MIPRouteTablePackage;
 
 
-MIPRouteTable *MIPRouteTable_create(MIP_ADDRESS table_address);
+MIPRouteTable *MIPRouteTable_create();
 
 void MIPRouteTable_destroy(MIPRouteTable *table);
 

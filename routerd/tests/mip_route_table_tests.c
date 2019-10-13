@@ -13,7 +13,7 @@ char *test_MIPRouteTable_update() {
     MIP_ADDRESS result = 0;
     int rc = 0;
 
-    MIPRouteTable *table = MIPRouteTable_create(1);
+    MIPRouteTable *table = MIPRouteTable_create();
     rc = MIPRouteTable_update(table, 1, 1, 0);
     result = MIPRouteTable_get_next_hop(table, 1);
 
@@ -24,13 +24,14 @@ char *test_MIPRouteTable_update() {
 }
 
 char *test_MIPRouteTable_dvr(){
-    MIPRouteTable *table1 = MIPRouteTable_create(1);
-    MIPRouteTable *table2 = MIPRouteTable_create(2);
+    MIPRouteTable *table1 = MIPRouteTable_create();
+    MIPRouteTable *table2 = MIPRouteTable_create();
 
-    
+    MIPRouteTable_update(table1, 1, 255, 0);
     MIPRouteTable_update(table1, 2, 2, 1);
     MIPRouteTable_update(table1, 3, 3, 5);
 
+    MIPRouteTable_update(table1, 2, 255, 0);
     MIPRouteTable_update(table2, 1, 1, 1);
     MIPRouteTable_update(table2, 3, 3, 1);
 
@@ -45,7 +46,7 @@ char *test_MIPRouteTable_dvr(){
 }
 
 char *test_MIPRouteTable_print(){
-    MIPRouteTable *table = MIPRouteTable_create(1);
+    MIPRouteTable *table = MIPRouteTable_create();
 
     MIPRouteTable_update(table, 2, 2, 1);
     MIPRouteTable_update(table, 3, 3, 5);
@@ -60,8 +61,9 @@ char *test_MIPRouteTable_print(){
 
 
 char *test_MIPRouteTable_create_package(){
-    MIPRouteTable *table = MIPRouteTable_create(1);
+    MIPRouteTable *table = MIPRouteTable_create();
 
+    MIPRouteTable_update(table, 1, 255, 0);
     MIPRouteTable_update(table, 2, 2, 1);
     MIPRouteTable_update(table, 3, 3, 5);
     MIPRouteTable_update(table, 4, 3, 1);
