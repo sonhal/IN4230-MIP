@@ -36,7 +36,6 @@ int append_interface_table(struct interface_table *table, struct sockaddr_ll *so
 int interface_equal(uint8_t interface_1[], uint8_t interface_2[]){
     int i = 0;
     for (i = 0; i < 6; i++){
-        printf("%02hhx = %02hhx\n", interface_1[i], interface_2[i]);
         if(interface_1[i] != interface_2[i]){
             return 0;
         }
