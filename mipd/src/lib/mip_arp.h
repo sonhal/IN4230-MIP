@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "packaging/mip_package.h"
+
 struct mip_arp_cache_entry {
     uint8_t address;
     int src_socket;
