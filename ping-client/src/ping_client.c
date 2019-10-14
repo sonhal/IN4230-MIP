@@ -78,7 +78,7 @@ int main(int argc, char *argv[]){
     rc = connect(so, (const struct sockaddr*)&so_name, sizeof(struct sockaddr_un));
     check(rc != -1, "[PING CLIENT] Failed to connect to domain socket: %s",so_name.sun_path);
 
-    printf("[PING CLIENT]  ping message:\nsrc:%d\tdst:%d\tcontent:%s\n", p_message->src_mip_addr, p_message->dst_mip_addr, p_message->content);
+    printf("[PING CLIENT]  ping message:\ndst:%d\tcontent:%s\n", p_message->dst_mip_addr, p_message->content);
     /* Write works on sockets as well as files: */
     long before = get_milli();
     rc = write(so, p_message, sizeof(struct ping_message));
