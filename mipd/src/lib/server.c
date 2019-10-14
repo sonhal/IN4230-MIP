@@ -122,7 +122,7 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event, char 
         MIPDServer_log(server,"Request is transport type request");
 
         // LOGG received packet to console
-        char *received_package_str = mip_packet_to_string(received_package);
+        char *received_package_str = MIPPackage_to_string(received_package);
         MIPDServer_log(server, " RECEIVED PACKET:\n%s", received_package_str);
         free(received_package_str);
         rc = get_interface_pos_for_mip_address(server->i_table, received_package->m_header.dst_addr);
