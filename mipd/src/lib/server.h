@@ -2,7 +2,19 @@
 #define _MIPDServer_H
 #include <stdint.h>
 
+#include "../../../commons/src/queue.h"
+
 #include "app_connection.h"
+
+typedef struct ForwardQueueEntry {
+    MIP_ADDRESS destination;
+    struct ping_message *p_message;
+    long age_milli;
+} ForwardQueueEntry;
+
+typedef struct ForwardQueue {
+    Queue *queue;
+} ForwardQueue;
 
 typedef struct MIPDServer {
     LocalSocket *app_socket;
@@ -10,6 +22,7 @@ typedef struct MIPDServer {
     LocalSocket *forward_socket;
     struct interface_table *i_table;
     struct mip_arp_cache *cache;
+    ForwardQueue *forward_queue;
     int debug_enabled;
 } MIPDServer;
 

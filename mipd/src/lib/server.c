@@ -19,7 +19,7 @@
 #include "interface.h"
 #include "server.h"
 #include "router/routing.h"
-
+#include "router/forwarding.h"
 
 #define INTERFACE_BUF_SIZE 10
 #define MIP_MESSAGE_BUF 1600
@@ -34,6 +34,7 @@ void MIPDServer_destroy(MIPDServer *server){
         LocalSocket_destroy(server->route_socket);
         LocalSocket_destroy(server->forward_socket);
         LocalSocket_destroy(server->app_socket);
+        ForwardQueue_destroy(server->forward_queue);
         free(server);
     }
 }
@@ -45,6 +46,7 @@ MIPDServer *MIPDServer_create(LocalSocket *app_socket, LocalSocket *route_socket
     server->forward_socket = forward_socket;
     server->i_table = table;
     server->cache = create_cache(cache_update_freq_milli);
+    server->forward_queue = ForwardQueue_create();
     server->debug_enabled = debug_enabled;
     return server;
 }
@@ -117,14 +119,20 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event, char 
 
 
     }else if (received_package->m_header.tra == 3){
-        debug("Request is transport type request");
+        MIPDServer_log(server,"Request is transport type request");
+
         // LOGG received packet to console
         char *received_package_str = mip_packet_to_string(received_package);
         MIPDServer_log(server, " RECEIVED PACKET:\n%s", received_package_str);
         free(received_package_str);
-        
-        rc = write(server->app_socket->connected_socket_fd, received_package->message, mip_header_payload_length_in_bytes(received_package));
-        check(rc != -1, "Failed to write received message to domain socket: %d", server->app_socket->connected_socket_fd);
+        rc = get_interface_pos_for_mip_address(server->i_table, received_package->m_header.dst_addr);
+        if(rc != -1){
+            rc = write(server->app_socket->connected_socket_fd, received_package->message, mip_header_payload_length_in_bytes(received_package));
+            check(rc != -1, "Failed to write received message to domain socket: %d", server->app_socket->connected_socket_fd);
+        } else {
+            // Forward package
+            // [Todo] add package to queue and request next destination
+        }
     }
 
     if(received_package) MIPPackage_destroy(received_package);
@@ -136,22 +144,18 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event, char 
 }
 
 // Handle a request to send a message on the domain socket, returns 1 on success, 0 on non critical error and -1 on critical error
-int handle_domain_socket_request(MIPDServer *server, int bytes_read, char *read_buffer){
+int handle_domain_socket_request(MIPDServer *server, struct ping_message *p_message){
     int rc = 0;
     struct mip_header *m_header = NULL;
     struct ether_frame *e_frame = NULL;
-    struct mip_packet *m_packet = NULL;
-    struct ping_message *p_message = NULL;
-
-    // Parse message on domain socket
-    p_message = parse_ping_request(read_buffer);
-    MIPDServer_log(server, "ping message:\nsrc:%d\tdst:%d\tcontent:%s", p_message->src_mip_addr, p_message->dst_mip_addr, p_message->content);
+    MIPPackage *m_packet = NULL;
 
     int sock = query_mip_address_src_socket(server->cache, p_message->dst_mip_addr);
     if(sock == -1){
         MIPDServer_log(server, "could not lockate mip address: %d in cache", p_message->dst_mip_addr);
         return 0;
     }
+
     int i_pos = get_interface_pos_for_socket(server->i_table, sock);
     check(i_pos != -1, "Could not locate sock address in interface table");
 
@@ -256,15 +260,23 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
              // New reponse from routerd on forwarding mip packet
             else if(events[i].data.fd == server->forward_socket->connected_socket_fd)
             {
+                MIP_ADDRESS *forward_response = calloc(1, sizeof(MIP_ADDRESS));
+
                 MIPDServer_log(server, "Route forward event");
-                rc = read_from_domain_socket(events[i].data.fd , read_buffer, read_buffer_size);
+                rc = read_from_domain_socket(events[i].data.fd , forward_response, sizeof(MIP_ADDRESS));
                 check(rc != -1, "Failed to read route forward response from routerd");
 
                 if(rc == 0){
                     handle_domain_socket_disconnect(server, &events[i]);
                     server->forward_socket->connected_socket_fd = -1;
                 } else {
-                    // [TODO] handle forward response   
+                    if(forward_found(forward_response)){
+                        handle_forward_response(server, forward_response);
+                    } else {
+                        struct ping_message *p_message = ForwardQueue_pop(server->forward_queue);
+                        free(p_message);
+                        MIPDServer_log(server, "Forward not found for destination: %d", forward_response[0]);
+                    }
                 }
                 continue;
             }
@@ -285,8 +297,17 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                     handle_domain_socket_disconnect(server, &events[i]);
                     server->app_socket->connected_socket_fd = -1;
                 } else {
-                    rc = handle_domain_socket_request(server, bytes_read, read_buffer);
+                    // Parse message on domain socket
+                    struct ping_message *p_message = parse_ping_request(read_buffer);
+                    MIPDServer_log(server, "ping message:\nsrc:%d\tdst:%d\tcontent:%s", p_message->src_mip_addr, p_message->dst_mip_addr, p_message->content);
+
+                    rc = handle_domain_socket_request(server, p_message);
                     check(rc != -1, "Failed to handle domain socket event");
+                    if(rc == 0){
+                        // MIP address is not a neighbor
+                        rc = request_forwarding(server, p_message);
+                        check(rc != -1, "Failed to request forwarding, routerd might not be connected")
+                    }
                 }
                 continue;
             }
