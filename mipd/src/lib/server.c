@@ -103,7 +103,8 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
         print_cache(server->cache);
     } else if(received_package->m_header.tra == 1){
         // MIP arp request
-        handle_mip_arp_request(server->cache, received_package, &server->i_table->interfaces[i_pos]);
+        rc = handle_mip_arp_request(server->cache, received_package, &server->i_table->interfaces[i_pos]);
+        check(rc != -1, "Failed to handle mip arp request");
 
     } else if (received_package->m_header.tra == 2){
         // MIP route table package
