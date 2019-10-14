@@ -11,6 +11,7 @@
 #include <arpa/inet.h>		/* htons */
 #include <ifaddrs.h>		/* getifaddrs */
 
+#include "../../../commons/src/definitions.h"
 
 #define SOCKET_ADDR_SIZE sizeof(struct sockaddr_ll)
 
