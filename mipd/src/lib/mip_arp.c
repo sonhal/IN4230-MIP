@@ -173,10 +173,13 @@ int handle_mip_arp_request(struct mip_arp_cache *cache, MIPPackage *received_pac
                                                 NULL,
                                                 0,
                                                 0);
-
+    check(response_m_packet != NULL, "Failed to create response package");
+    
     rc = sendto_raw_mip_package(i_received_on->raw_socket, i_received_on->so_name, response_m_packet);
     check(rc != -1, "Failed to send arp response package");
     append_to_cache(cache, i_received_on->raw_socket, received_package->m_header.src_addr, i_received_on->so_name->sll_addr);
+
+    return 1;
 
     error:
         return -1;
@@ -189,7 +192,7 @@ void print_cache(struct mip_arp_cache *cache){
     printf("----- mipd cache -----\n");
     for(i = 0; i < cache->size; i++){
         entry = cache->entries[i];
-        printf("cache entry %d\t mip address %d\t interface \tsrc_socet %d", i, entry.address, entry.src_socket);
+        printf("cache entry %d\t mip address %d\t interface \tsrc_socket %d", i, entry.address, entry.src_socket);
 
         int k = 0;
         for(k = 0; k < 5; k++){
