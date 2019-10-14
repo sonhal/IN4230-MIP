@@ -132,6 +132,8 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event, char 
         } else {
             // Forward package
             // [Todo] add package to queue and request next destination
+            rc = request_forwarding(server, received_package->m_header.dst_addr, received_package);
+            check(rc != -1, "Failed to request forwarding for received package");
         }
     }
 
@@ -261,6 +263,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
             else if(events[i].data.fd == server->forward_socket->connected_socket_fd)
             {
                 MIP_ADDRESS *forward_response = calloc(1, sizeof(MIP_ADDRESS));
+                check_mem(forward_response);
 
                 MIPDServer_log(server, "Route forward event");
                 rc = read_from_domain_socket(events[i].data.fd , forward_response, sizeof(MIP_ADDRESS));
@@ -270,14 +273,16 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                     handle_domain_socket_disconnect(server, &events[i]);
                     server->forward_socket->connected_socket_fd = -1;
                 } else {
-                    if(forward_found(forward_response)){
-                        handle_forward_response(server, forward_response);
+                    if(forward_found(*forward_response)){
+                        rc = handle_forward_response(server, *forward_response);
+                        check(rc != -1, "Failed to handle forward response from routerd");
                     } else {
-                        struct ping_message *p_message = ForwardQueue_pop(server->forward_queue);
-                        free(p_message);
-                        MIPDServer_log(server, "Forward not found for destination: %d", forward_response[0]);
+                        MIPPackage *package = ForwardQueue_pop(server->forward_queue);
+                        MIPDServer_log(server, "Forward not found for destination: %d", package->m_header.dst_addr);
+                        MIPPackage_destroy(package);
                     }
                 }
+                free(forward_response);
                 continue;
             }
 
@@ -305,7 +310,9 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                     check(rc != -1, "Failed to handle domain socket event");
                     if(rc == 0){
                         // MIP address is not a neighbor
-                        rc = request_forwarding(server, p_message);
+                        MIPPackage *ping_message_package = create_queueable_ping_message_MIPPackage(p_message);
+                        check(ping_message_package != NULL, "Failed to create ping message MIPPackage");
+                        rc = request_forwarding(server, p_message->dst_mip_addr, ping_message_package);
                         check(rc != -1, "Failed to request forwarding, routerd might not be connected")
                     }
                 }

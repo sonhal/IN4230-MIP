@@ -14,8 +14,8 @@ ForwardQueue *ForwardQueue_create();
 inline void ForwardQueue_destroy(ForwardQueue *fq);
 
 // returns 1 if response was found, -1 if not
-int forward_found(MIP_ADDRESS *forward_response);
+int forward_found(MIP_ADDRESS forward_response);
 
-int request_forwarding(MIPDServer *server, struct ping_message *p_message);
+int request_forwarding(MIPDServer *server, MIP_ADDRESS destination, MIPPackage *package);
 
 #endif
