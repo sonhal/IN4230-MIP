@@ -79,20 +79,18 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
     int rc = 0;
     struct sockaddr_ll *active_interface_so_name;
     MIPPackage *received_package = MIPPackage_create_empty();
-    struct ether_frame *response_e_frame = NULL;
-    struct mip_header *response_m_header = NULL;
-    MIPPackage *response_m_packet = NULL;
 
     rc = recv_raw_mip_package(event->data.fd, received_package);
     //rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_so_name, &received_header);
     check(rc != -1, "Failed to receive from raw socket");
 
     int i_pos = get_interface_pos_for_socket(server->i_table, event->data.fd);
-    MIPDServer_log(server, "position: %d found for socket: %d", i_pos, event->data.fd);
-    int mip_addr = server->i_table->interfaces[i_pos].mip_address;
     active_interface_so_name = server->i_table->interfaces[i_pos].so_name;
 
-    MIPDServer_log_received_package(server, &received_package->m_header);
+    // LOGG received packet to console
+    char *received_package_str = MIPPackage_to_string(received_package);
+    MIPDServer_log(server, " RECEIVED PACKET:\n%s", received_package_str);
+    free(received_package_str);
 
     if (received_package->m_header.tra == 0){
         // MIP arp response
@@ -113,20 +111,16 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
     }else if (received_package->m_header.tra == 3){
         MIPDServer_log(server,"Request is transport type request");
 
-        // LOGG received packet to console
-        char *received_package_str = MIPPackage_to_string(received_package);
-        MIPDServer_log(server, " RECEIVED PACKET:\n%s", received_package_str);
-        free(received_package_str);
+         // check if the request is to a mip address the mipd owns
         rc = get_interface_pos_for_mip_address(server->i_table, received_package->m_header.dst_addr);
         if(rc != -1){
             // MIPPackage is to this host
             rc = handle_MIPPackage_for_application(server, received_package);
             check(rc != -1, "Failed to deliver package to local application");
         } else {
-            // Forward package
-            // [Todo] add package to queue and request next destination
+            // Forward package if TTL is not 0
             int timetolive = received_package->m_header.ttl;
-            if((timetolive - 1) < 0){
+            if(received_package->m_header.ttl == 0){
                 MIPDServer_log(server, "Dropping received package from mip src: %d\tto dst %d\tTTL is %d",
                                         received_package->m_header.src_addr,
                                         received_package->m_header.dst_addr,
