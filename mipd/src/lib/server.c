@@ -88,7 +88,7 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
     check(rc != -1, "Failed to receive from raw socket");
 
     int i_pos = get_interface_pos_for_socket(server->i_table, event->data.fd);
-    MIPDServer_log(server, "position found for socket: %d", i_pos);
+    MIPDServer_log(server, "position: %d found for socket: %d", i_pos, event->data.fd);
     int mip_addr = server->i_table->interfaces[i_pos].mip_address;
     active_interface_so_name = server->i_table->interfaces[i_pos].so_name;
 
