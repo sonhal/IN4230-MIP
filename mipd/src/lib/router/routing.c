@@ -89,8 +89,12 @@ int broadcast_route_table(MIPDServer *server, MIPRouteTablePackage *table_packag
         return -1;
 }
 
-// Handles a received route table broadcast from a neighbor mipd, returns 1 on success, -1 on failure
+// Handles a received route table broadcast from a neighbor mipd, returns 1 on success, -1 on failure, 0 if no routerd is connected to receive the table
 int recv_route_table_broadcast(MIPDServer *server, MIPPackage *package){
+    if(server->route_socket->connected_socket_fd == -1){
+        MIPDServer_log(server, "No routerd connected to receive route table");
+        return 0;
+    }
     int rc = 0;
 
     MIPRouteTablePackage *table = parse_broadcasted_table(package);

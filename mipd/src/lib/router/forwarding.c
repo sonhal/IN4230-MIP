@@ -2,8 +2,8 @@
 #include "../../../../commons/src/dbg.h"
 
 #include "forwarding.h"
+#include "../packaging/mip_package.h"
 #include "../link.h"
-#include "../server.h"
 #include "../mip_arp.h"
 
 ForwardQueue *ForwardQueue_create(){
@@ -30,8 +30,8 @@ int ForwardQueue_push(ForwardQueue *fq, MIPPackage *package){
 MIPPackage *ForwardQueue_pop(ForwardQueue *fq){
     ForwardQueueEntry *entry = Queue_recv(fq->queue);
     check(entry != NULL, "Invalid return from queue, entry=NULL");
-    MIPPackage *package = entry->package;
-    
+    MIPPackage *package = (MIPPackage *)entry->package;
+
     free(entry);
     check(package != NULL, "Invalid package stored in entry - package=NULL");
     return package;
