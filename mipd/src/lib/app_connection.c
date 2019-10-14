@@ -165,7 +165,7 @@ MIPPackage *create_queueable_ping_message_MIPPackage(struct ping_message *messag
     MIPPackage *m_package = NULL;
 
     // Create MIP packet
-    m_package = MIPPackage_create_raw(0, &default_mac, message->dst_mip_addr, &default_mac, message, sizeof(struct ping_message), 3);
+    m_package = MIPPackage_create_raw(255, &default_mac, message->dst_mip_addr, &default_mac, message, sizeof(struct ping_message), 3);
     check(m_package != NULL, "Failed to create MIPPackage");
 
     return m_package;
