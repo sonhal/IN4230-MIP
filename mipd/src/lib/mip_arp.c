@@ -189,10 +189,10 @@ void print_cache(struct mip_arp_cache *cache){
     int i = 0;
     struct mip_arp_cache_entry entry;
 
-    printf("----------------------------- MIPD cache -----------------------------\n");
+    printf("----------------------------- MIPD cache ----------------------------------\n");
     for(i = 0; i < cache->size; i++){
         entry = cache->entries[i];
-        printf("cache entry %d\t mip address %d\tsrc_socket %d\tinterface: ", i, entry.mip_address, entry.src_socket);
+        printf("cache entry: %d\tmip address: %d\tsrc_socket: %d\tinterface: ", i, entry.mip_address, entry.src_socket);
 
         int k = 0;
         for(k = 0; k < 5; k++){
@@ -201,5 +201,5 @@ void print_cache(struct mip_arp_cache *cache){
         printf("%02hhx", entry.dst_interface[k]);
         printf("\n");
     }
-    printf("--------------------------------------------------------------------\n");
+    printf("--------------------------------------------------------------------------\n");
 }
