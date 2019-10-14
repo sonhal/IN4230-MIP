@@ -160,7 +160,7 @@ int update_arp_cache(struct interface_table *table, struct mip_arp_cache *cache)
     int rc = 0;
     int i = 0;
     for(i = 0; i < cache->size; i++){
-        if(is_cache_entry_expired(&cache->entries[i], cache->update_freq)){
+        if(is_cache_entry_expired(&cache->entries[i], cache->update_freq * 2)){
             remove_from_cache(cache, i);
             i--; // Walk back i as the cache has been left shifted by remove function
         }

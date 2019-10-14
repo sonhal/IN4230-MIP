@@ -207,6 +207,8 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
 
     while(running){
         MIPDServer_log(server," Polling...");
+        update_arp_cache(server->i_table, server->cache);
+
         event_count = epoll_wait(epoll_fd, events, event_num, timeout);
         int i = 0;
         for(i = 0; i < event_count; i++){
@@ -247,7 +249,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                 check(rc != -1, "Failed to read route table package from routerd");
                 if(rc == 0){
                     handle_domain_socket_disconnect(server, &events[i]);
-                    server->route_socket->connected_socket_fd = -1;
+                    server->route_socket->connected_socket_fd = -121;
                 } else {
                     rc = broadcast_route_table(server, table_package);
                     check(rc != -1, "Failed to broadcast route table");   
@@ -267,7 +269,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
 
                 if(rc == 0){
                     handle_domain_socket_disconnect(server, &events[i]);
-                    server->forward_socket->connected_socket_fd = -1;
+                    server->forward_socket->connected_socket_fd = -111;
                 } else {
                     if(forward_found(*forward_response)){
                         rc = handle_forward_response(server, *forward_response);
@@ -297,7 +299,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
 
                 if(bytes_read == 0){
                     handle_domain_socket_disconnect(server, &events[i]);
-                    server->app_socket->connected_socket_fd = -1;
+                    server->app_socket->connected_socket_fd = -100;
                 } else {
                     // Parse message on domain socket
                     struct ping_message *p_message = parse_ping_request(read_buffer);
@@ -328,9 +330,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                 }
                 continue;
             }
-
         }
-        update_arp_cache(server->i_table, server->cache);
     }
 
     MIPDServer_destroy(server);
