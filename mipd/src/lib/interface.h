@@ -48,6 +48,8 @@ int is_socket_in_table(struct interface_table *table, int fd);
 
 int get_interface_pos_for_socket(struct interface_table *table, int fd);
 
+int get_interface_pos_for_mip_address(struct interface_table *table, MIP_ADDRESS address);
+
 char *macaddr_str(struct sockaddr_ll *sa);
 
 char *macaddr_str_for_int_buff(char address[]);

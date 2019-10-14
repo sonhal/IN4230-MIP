@@ -12,6 +12,7 @@
 #include "interface.h"
 #include "../../../commons/src/polling.h"
 #include "../../../commons/src/dbg.h"
+#include "../../../commons/src/definitions.h"
 #include "packaging/ether_frame.h"
 
 
@@ -173,6 +174,17 @@ int get_interface_pos_for_socket(struct interface_table *table, int fd){
         }
     }
     return 0;
+}
+
+int get_interface_pos_for_mip_address(struct interface_table *table, MIP_ADDRESS address){
+    int rc = 0;
+    int i = 0;
+    for(i = 0; i < table->size; i++){
+        if(table->interfaces[i].mip_address == address){
+            return i;
+        }
+    }
+    return -1;
 }
 
 
