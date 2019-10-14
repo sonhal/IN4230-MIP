@@ -3,8 +3,7 @@
 #include <stdint.h>
 
 #include "../../../commons/src/queue.h"
-
-#include "app_connection.h"
+#include "packaging/mip_package.h"
 
 typedef struct ForwardQueueEntry {
     MIP_ADDRESS destination;
@@ -15,6 +14,13 @@ typedef struct ForwardQueueEntry {
 typedef struct ForwardQueue {
     Queue *queue;
 } ForwardQueue;
+
+
+typedef struct LocalSocket {
+    int listening_socket_fd;
+    int connected_socket_fd;
+    struct sockaddr_un *so_name;
+} LocalSocket;
 
 typedef struct MIPDServer {
     LocalSocket *app_socket;
