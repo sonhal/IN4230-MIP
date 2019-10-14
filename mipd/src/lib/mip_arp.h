@@ -1,5 +1,7 @@
-#include <stdint.h>
+#ifndef _MIP_ARP_H
+#define _MIP_ARP_H
 
+#include <stdint.h>
 
 struct mip_arp_cache_entry {
     uint8_t address;
@@ -31,4 +33,8 @@ int complete_mip_arp(struct interface_table *table, struct mip_arp_cache *cache)
 
 int update_arp_cache(struct interface_table *table, struct mip_arp_cache *cache);
 
+int handle_mip_arp_request(struct mip_arp_cache *cache, MIPPackage *received_package, struct interface_record *i_received_on);
+
 void print_cache(struct mip_arp_cache *cache);
+
+#endif

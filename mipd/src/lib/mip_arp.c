@@ -39,6 +39,7 @@ struct mip_arp_cache *create_cache(long update_freq){
 
 
 int append_to_cache(struct mip_arp_cache *cache, int src_socket, uint8_t mip_address, uint8_t interface[]){
+    check(mip_address != 255, "Invalid MIP Address: %d", mip_address);
     struct mip_arp_cache_entry  new_entry = {.address=mip_address, .src_socket=src_socket, .last_update=get_milli()};
 
     // Will be -1 if the entry is new
@@ -53,6 +54,8 @@ int append_to_cache(struct mip_arp_cache *cache, int src_socket, uint8_t mip_add
         cache->size++;
         return cache->size;
     }
+    error:
+        return -1;
 }
 
 // Removes entry from cache and reduces the size field in cache, returns pos of element removed
@@ -151,6 +154,29 @@ int update_arp_cache(struct interface_table *table, struct mip_arp_cache *cache)
         check(rc != -1, "Failed to complete arp");
     }
     return 0;
+
+    error:
+        return -1;
+}
+
+// Handles a received mip arp request, does not free received_package
+// Returns 1 on success, -1 on failure
+int handle_mip_arp_request(struct mip_arp_cache *cache, MIPPackage *received_package, struct interface_record *i_received_on){
+    int rc = 0;
+    MIPPackage *response_m_packet = NULL;
+
+    // MIP arp response
+    response_m_packet = MIPPackage_create_raw(i_received_on->mip_address,
+                                                i_received_on->interface,
+                                                received_package->m_header.src_addr,
+                                                received_package->e_frame.src_addr,
+                                                NULL,
+                                                0,
+                                                0);
+
+    rc = sendto_raw_mip_package(i_received_on->raw_socket, i_received_on->so_name, response_m_packet);
+    check(rc != -1, "Failed to send arp response package");
+    append_to_cache(cache, i_received_on->raw_socket, received_package->m_header.src_addr, i_received_on->so_name->sll_addr);
 
     error:
         return -1;

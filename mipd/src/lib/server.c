@@ -75,7 +75,7 @@ void handle_domain_socket_disconnect(MIPDServer *server, struct epoll_event *eve
 }
 
 // returns MIP header tra which descripes the type of package received
-int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event, char *read_buffer, int read_buffer_size){
+int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
     int rc = 0;
     struct sockaddr_ll *active_interface_so_name;
     MIPPackage *received_package = MIPPackage_create_empty();
@@ -98,19 +98,12 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event, char 
 
     if (received_package->m_header.tra == 0){
         // MIP arp response
-        append_to_cache(server->cache, event->data.fd, received_package->m_header.src_addr, active_interface_so_name->sll_addr);
+        rc = append_to_cache(server->cache, event->data.fd, received_package->m_header.src_addr, active_interface_so_name->sll_addr);
+        check(rc != -1, "Failed to add MIP ARP response to cache");
         print_cache(server->cache);
     } else if(received_package->m_header.tra == 1){
         // MIP arp request
-        response_e_frame = create_ethernet_frame(received_package->e_frame.src_addr, &active_interface_so_name);
-        response_m_header = create_arp_response_mip_header(mip_addr, &received_package->m_header);
-        response_m_packet = MIPPackage_create(response_e_frame, response_m_header, NULL, 0);
-        rc = sendto_raw_mip_package(event->data.fd, active_interface_so_name, response_m_packet);
-        check(rc != -1, "Failed to send arp response package");
-        append_to_cache(server->cache, event->data.fd, received_package->m_header.src_addr, active_interface_so_name->sll_addr);
-        // Free the used frames and headers
-        free(response_e_frame);
-        free(response_m_header);
+        handle_mip_arp_request(server->cache, received_package, &server->i_table->interfaces[i_pos]);
 
     } else if (received_package->m_header.tra == 2){
         // MIP route table package
@@ -305,7 +298,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
             // Raw socket event
             else if(is_socket_in_table(server->i_table, events[i].data.fd)){
                 MIPDServer_log(server, "raw socket packet");
-                handle_raw_socket_frame(server, &events[i], read_buffer, read_buffer_size);
+                handle_raw_socket_frame(server, &events[i]);
                 continue;
             }
 
