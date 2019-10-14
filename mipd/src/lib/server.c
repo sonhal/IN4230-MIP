@@ -112,7 +112,7 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event, char 
         free(response_e_frame);
         free(response_m_header);
 
-    } else if (received_package->m_header.tra = 2){
+    } else if (received_package->m_header.tra == 2){
         // MIP route table package
         MIPDServer_log(server, "received route table package");
         recv_route_table_broadcast(server, received_package);
