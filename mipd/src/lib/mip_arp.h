@@ -29,6 +29,8 @@ int query_mip_address_src_socket(struct mip_arp_cache *cache, MIP_ADDRESS mip_ad
 
 int query_mip_address_pos(struct mip_arp_cache *cache, MIP_ADDRESS mip_address);
 
+MIP_ADDRESS query_cache_socket_mip_address(struct mip_arp_cache *cache, int sock);
+
 int should_complete_new_arp(struct mip_arp_cache *cache);
 
 int complete_mip_arp(struct interface_table *table, struct mip_arp_cache *cache);

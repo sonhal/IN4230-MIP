@@ -97,6 +97,22 @@ int query_mip_address_pos(struct mip_arp_cache *cache, MIP_ADDRESS mip_address){
     return -1;
 }
 
+// return mip address can be reached trough socket if it is in the cache, -1 if it does not exist in the cache
+MIP_ADDRESS query_cache_socket_mip_address(struct mip_arp_cache *cache, int sock){
+    int rc = 0;
+    int i = 0;
+    for (i = 0; i < cache->size; i++){
+        if(sock == cache->entries[i].src_socket){
+            check(cache->entries[i].mip_address < 255 && cache->entries[i].mip_address >= 0, "Invalid mip address found i cache: %d", cache->entries[i].mip_address);
+            return cache->entries[i].mip_address;
+        }
+    }
+
+    //Fall trough
+    error:
+        return 255;
+}
+
 int should_complete_new_arp(struct mip_arp_cache *cache){
     long current_time = get_milli();
     long last_update = cache->last_arp;
