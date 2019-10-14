@@ -178,7 +178,6 @@ int handle_domain_socket_request(MIPDServer *server, struct ping_message *p_mess
 
     // set src mip address
     uint8_t src_mip_addr = server->i_table->interfaces[i_pos].mip_address;
-    p_message->src_mip_addr = src_mip_addr;
 
     struct sockaddr_ll *sock_name = server->i_table->interfaces[i_pos].so_name;
     int cache_pos = query_mip_address_pos(server->cache, p_message->dst_mip_addr);
@@ -190,7 +189,6 @@ int handle_domain_socket_request(MIPDServer *server, struct ping_message *p_mess
     m_header = create_transport_mip_header(src_mip_addr, p_message->dst_mip_addr);
 
     // Create MIP packet
-    p_message->src_mip_addr = m_header->src_addr; // Sett src address in ping message so it can be PONG'ed
     m_packet = MIPPackage_create(e_frame, m_header, p_message, sizeof(p_message));
 
     // Send the message
@@ -319,7 +317,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                 } else {
                     // Parse message on domain socket
                     struct ping_message *p_message = parse_ping_request(read_buffer);
-                    MIPDServer_log(server, "ping message:\nsrc:%d\tdst:%d\tcontent:%s", p_message->src_mip_addr, p_message->dst_mip_addr, p_message->content);
+                    MIPDServer_log(server, "ping message:\ndst:%d\tcontent:%s", p_message->dst_mip_addr, p_message->content);
 
                     rc = handle_domain_socket_request(server, p_message);
                     check(rc != -1, "Failed to handle domain socket event");
