@@ -13,6 +13,7 @@ MIPForwardRequest *recv_forwarding_request(int socket){
 
     rc = recv(socket, raw_packet, FORWARDING_PACKET_BYTE_SIZE, 0);
     check(rc != -1, "Failed to recv forwarding request");
+    check(rc != 0, "mipd disconnected");
 
     // Parse raw packet
     memcpy(forwarding_request, raw_packet, FORWARDING_PACKET_BYTE_SIZE);
@@ -21,15 +22,15 @@ MIPForwardRequest *recv_forwarding_request(int socket){
     return forwarding_request;
 
     error:
-        return -1;
+        return NULL;
 }
 
 
 MIP_ADDRESS handle_forwarding_request(MIPRouteTable *table, int socket){
 
     MIPForwardRequest *forwarding_request = recv_forwarding_request(socket);
+    check(forwarding_request != NULL, "Failed to receive forwarding request");
     printf("Request for next hop to mip address: %d\n", forwarding_request->destination);
-    check_mem(forwarding_request);
     check(forwarding_request->destination >= 0 && forwarding_request->destination < 256, "Invalid destination MIP address");
 
     MIP_ADDRESS next_hop =  MIPRouteTable_get_next_hop(table, forwarding_request->destination);
