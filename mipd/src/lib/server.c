@@ -130,7 +130,7 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event, char 
             // MIPPackage is to this host
             ApplicationMessage *app_message = calloc(1, sizeof(ApplicationMessage));
             app_message->mip_src = received_package->m_header.src_addr; 
-            memcpy(app_message, received_package->message, sizeof(struct ping_message));
+            memcpy(&app_message->message, received_package->message, sizeof(struct ping_message));
             MIPDServer_log(server, "ApplicationMessage to app: mip src: %d\tmessage: %s",app_message->mip_src, app_message->message);
             rc = write(server->app_socket->connected_socket_fd, app_message, sizeof(ApplicationMessage));
             check(rc != -1, "Failed to write received message to domain socket: %d", server->app_socket->connected_socket_fd);
