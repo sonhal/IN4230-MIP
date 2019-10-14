@@ -173,3 +173,26 @@ MIPPackage *create_queueable_ping_message_MIPPackage(struct ping_message *messag
     error:
         return NULL;
 }
+
+// handle a MIPPackage meant for the current host, does not free received_package
+// Returns 1 on success, -1 on failure, 0 if there is no application to receive package
+int handle_MIPPackage_for_application(MIPDServer *server, MIPPackage *received_package){
+    if(server->app_socket->connected_socket_fd == -1){
+        MIPDServer_log(server, "No application connected to handle received package");
+        return 0;
+    }
+    int rc = 0;
+    ApplicationMessage *app_message = calloc(1, sizeof(ApplicationMessage));
+
+    app_message->mip_src = received_package->m_header.src_addr; 
+    memcpy(&app_message->message, received_package->message, sizeof(struct ping_message));
+
+    rc = write(server->app_socket->connected_socket_fd, app_message, sizeof(ApplicationMessage));
+    ApplicationMessage_destroy(app_message);
+    check(rc != -1, "Failed to write received message to domain socket: %d", server->app_socket->connected_socket_fd);
+
+    return 1;
+
+    error:
+        return -1;
+}

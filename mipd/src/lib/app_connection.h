@@ -15,13 +15,7 @@
 #include <net/ethernet.h> /* the L2 protocols */
 
 #include "packaging/mip_package.h"
-
-
-typedef struct LocalSocket {
-    int listening_socket_fd;
-    int connected_socket_fd;
-    struct sockaddr_un *so_name;
-} LocalSocket;
+#include "server.h"
 
 LocalSocket *LocalSocket_create(char *path, enum __socket_type socket_type);
 
@@ -40,5 +34,7 @@ struct ping_message *parse_ping_request(BYTE *buffer);
 int read_from_domain_socket(int socket_fd, BYTE *buffer, size_t buffer_size);
 
 MIPPackage *create_queueable_ping_message_MIPPackage(struct ping_message *message);
+
+int handle_MIPPackage_for_application(MIPDServer *server, MIPPackage *received_package);
 
 #endif
