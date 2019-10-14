@@ -34,7 +34,7 @@ int main(int argc, char *argv[]){
     log_info("Started Ping server");
 
     int rc = 0;
-    struct ping_message *request = calloc(1, sizeof(struct ping_message));
+    ApplicationMessage *request = calloc(1, sizeof(ApplicationMessage));
     int so = 0;
     struct sockaddr_un so_name;
   
@@ -57,15 +57,15 @@ int main(int argc, char *argv[]){
     log_info("Ping server up and polling");
     while (1)
     {
-        rc = recv(so, request, sizeof(struct ping_message), 0);
+        rc = recv(so, request, sizeof(ApplicationMessage), 0);
         check(rc != -1, "Failed to read response from mipd");
-        log_info("RECEIVED from MIP addr: %d", request->src_mip_addr);
-        log_info("Sending to mip addr: %d", request->src_mip_addr);
+        log_info("RECEIVED from MIP addr: %d", request->mip_src);
+        log_info("Sending to mip addr: %d", request->mip_src);
 
         struct ping_message *response = calloc(1, sizeof(struct ping_message));
         char *message = "PONG";
         strncpy(response->content, message, 31);
-        response->dst_mip_addr = request->src_mip_addr;
+        response->dst_mip_addr = request->mip_src;
 
         rc = write(so, response, sizeof(struct ping_message));
         check(rc != -1, "Failed to write to mipd");

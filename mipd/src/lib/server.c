@@ -127,7 +127,11 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event, char 
         free(received_package_str);
         rc = get_interface_pos_for_mip_address(server->i_table, received_package->m_header.dst_addr);
         if(rc != -1){
-            rc = write(server->app_socket->connected_socket_fd, received_package->message, mip_header_payload_length_in_bytes(received_package));
+            // MIPPackage is to this host
+            ApplicationMessage *app_message = calloc(1, sizeof(ApplicationMessage));
+            app_message->mip_src = received_package->m_header.src_addr; 
+            memcpy(app_message, received_package->message, sizeof(struct ping_message));
+            rc = write(server->app_socket->connected_socket_fd, app_message, sizeof(ApplicationMessage));
             check(rc != -1, "Failed to write received message to domain socket: %d", server->app_socket->connected_socket_fd);
         } else {
             // Forward package

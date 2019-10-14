@@ -39,7 +39,7 @@ int main(int argc, char *argv[]){
 
     int rc = 0;
     struct ping_message *p_message = calloc(1, sizeof(struct ping_message));
-    struct ping_message *p_response = calloc(1, sizeof(struct ping_message));
+    ApplicationMessage *p_response = calloc(1, sizeof(ApplicationMessage));
 
     int so = 0;
 
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]){
         printf("[PING CLIENT] Timeout\t time elapsed: %ld\n",after - before);
     }else {
         check(rc != -1, "Failed to read response from mipd");
-        printf("[PING CLIENT] received from mipd: %d\tmessage: %s\n", p_response->src_mip_addr, p_response->content);
+        printf("[PING CLIENT] received from mipd: %d\tmessage: %s\n", p_response->mip_src, p_response->message.content);
         printf("[PING CLIENT] time elapsed: %ld\n", after - before);
     }
 
