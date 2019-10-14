@@ -60,6 +60,7 @@ int main(int argc, char *argv[]){
         check_mem(request);
         rc = recv(so, request, sizeof(ApplicationMessage), 0);
         check(rc != -1, "Failed to read response from mipd");
+        check(rc != 0, "mipd disconnected");
         log_info("RECEIVED message\tMIP src: %d\tmessage: %s\n", request->mip_src, request->message.content);
 
         struct ping_message *response = calloc(1, sizeof(struct ping_message));
