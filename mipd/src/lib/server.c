@@ -94,8 +94,6 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
 
     MIPDServer_log_received_package(server, &received_package->m_header);
 
-
-
     if (received_package->m_header.tra == 0){
         // MIP arp response
         rc = append_to_cache(server->cache, event->data.fd, received_package->m_header.src_addr, active_interface_so_name->sll_addr);

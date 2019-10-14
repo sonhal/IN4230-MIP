@@ -6,7 +6,7 @@
 #include "packaging/mip_package.h"
 
 struct mip_arp_cache_entry {
-    uint8_t address;
+    MIP_ADDRESS mip_address;
     int src_socket;
     uint8_t dst_interface[6];
     unsigned long last_update;
@@ -23,11 +23,11 @@ struct mip_arp_cache
 
 struct mip_arp_cache *create_cache(long update_freq);
 
-int append_to_cache(struct mip_arp_cache *cache, int src_socket, uint8_t mip_address, uint8_t interface[]);
+int append_to_cache(struct mip_arp_cache *cache, int src_socket, MIP_ADDRESS mip_address, uint8_t interface[]);
 
-int query_mip_address_src_socket(struct mip_arp_cache *cache, uint8_t mip_address);
+int query_mip_address_src_socket(struct mip_arp_cache *cache, MIP_ADDRESS mip_address);
 
-int query_mip_address_pos(struct mip_arp_cache *cache, uint8_t mip_address);
+int query_mip_address_pos(struct mip_arp_cache *cache, MIP_ADDRESS mip_address);
 
 int should_complete_new_arp(struct mip_arp_cache *cache);
 

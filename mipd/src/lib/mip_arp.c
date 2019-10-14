@@ -38,9 +38,9 @@ struct mip_arp_cache *create_cache(long update_freq){
 }
 
 
-int append_to_cache(struct mip_arp_cache *cache, int src_socket, uint8_t mip_address, uint8_t interface[]){
+int append_to_cache(struct mip_arp_cache *cache, int src_socket, MIP_ADDRESS mip_address, uint8_t interface[]){
     check(mip_address != 255, "Invalid MIP Address: %d", mip_address);
-    struct mip_arp_cache_entry  new_entry = {.address=mip_address, .src_socket=src_socket, .last_update=get_milli()};
+    struct mip_arp_cache_entry  new_entry = {.mip_address=mip_address, .src_socket=src_socket, .last_update=get_milli()};
 
     // Will be -1 if the entry is new
     int entry_pos = query_mip_address_pos(cache, mip_address);
@@ -74,11 +74,11 @@ int remove_from_cache(struct mip_arp_cache *cache, int pos){
 }
 
 // return socket mip address can be reached trough if it is in the cache, -1 if it does not exist in the cache
-int query_mip_address_src_socket(struct mip_arp_cache *cache, uint8_t mip_address){
+int query_mip_address_src_socket(struct mip_arp_cache *cache, MIP_ADDRESS mip_address){
     int rc = 0;
     int i = 0;
     for (i = 0; i < cache->size; i++){
-        if(mip_address == cache->entries[i].address){
+        if(mip_address == cache->entries[i].mip_address){
             return cache->entries[i].src_socket;
         }
     }
@@ -86,11 +86,11 @@ int query_mip_address_src_socket(struct mip_arp_cache *cache, uint8_t mip_addres
 }
 
 // return socket mip address can be reached trough if it is in the cache, -1 if it does not exist in the cache
-int query_mip_address_pos(struct mip_arp_cache *cache, uint8_t mip_address){
+int query_mip_address_pos(struct mip_arp_cache *cache, MIP_ADDRESS mip_address){
     int rc = 0;
     int i = 0;
     for (i = 0; i < cache->size; i++){
-        if(mip_address == cache->entries[i].address){
+        if(mip_address == cache->entries[i].mip_address){
             return i;
         }
     }
@@ -174,7 +174,7 @@ int handle_mip_arp_request(struct mip_arp_cache *cache, MIPPackage *received_pac
                                                 0,
                                                 0);
     check(response_m_packet != NULL, "Failed to create response package");
-    
+
     rc = sendto_raw_mip_package(i_received_on->raw_socket, i_received_on->so_name, response_m_packet);
     check(rc != -1, "Failed to send arp response package");
     append_to_cache(cache, i_received_on->raw_socket, received_package->m_header.src_addr, i_received_on->so_name->sll_addr);
@@ -192,7 +192,7 @@ void print_cache(struct mip_arp_cache *cache){
     printf("----- mipd cache -----\n");
     for(i = 0; i < cache->size; i++){
         entry = cache->entries[i];
-        printf("cache entry %d\t mip address %d\t interface \tsrc_socket %d", i, entry.address, entry.src_socket);
+        printf("cache entry %d\t mip address %d\t interface \tsrc_socket %d", i, entry.mip_address, entry.dst_interface, entry.src_socket);
 
         int k = 0;
         for(k = 0; k < 5; k++){
