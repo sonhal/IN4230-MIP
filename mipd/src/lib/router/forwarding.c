@@ -19,19 +19,22 @@ void ForwardQueue_destroy(ForwardQueue *fq){
     }
 }
 
-int ForwardQueue_push(ForwardQueue *fq, struct ping_message *p_message){
+int ForwardQueue_push(ForwardQueue *fq, MIPPackage *package){
     ForwardQueueEntry *entry = calloc(1, sizeof(ForwardQueueEntry));
     entry->age_milli = get_now_milli();
-    entry->destination = p_message->dst_mip_addr;
-    entry->p_message = p_message;
+    entry->destination = package->m_header.dst_addr;
+    entry->package = package;
     Queue_send(fq->queue, entry);
 }
 
-struct ping_message *ForwardQueue_pop(ForwardQueue *fq){
+MIPPackage *ForwardQueue_pop(ForwardQueue *fq){
     ForwardQueueEntry *entry = Queue_recv(fq->queue);
     check(entry != NULL, "Invalid return from queue, entry=NULL");
+    MIPPackage *package = entry->package;
     
-    return entry->p_message;
+    free(entry);
+    check(package != NULL, "Invalid package stored in entry - package=NULL");
+    return package;
 
     error:
         return NULL;

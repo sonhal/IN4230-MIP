@@ -8,7 +8,7 @@
 
 typedef struct ForwardQueueEntry {
     MIP_ADDRESS destination;
-    struct ping_message *p_message;
+    MIPPackage *package;
     long age_milli;
 } ForwardQueueEntry;
 

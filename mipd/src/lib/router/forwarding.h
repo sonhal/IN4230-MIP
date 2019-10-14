@@ -18,4 +18,6 @@ int forward_found(MIP_ADDRESS forward_response);
 
 int request_forwarding(MIPDServer *server, MIP_ADDRESS destination, MIPPackage *package);
 
+MIPPackage *ForwardQueue_pop(ForwardQueue *fq);
+
 #endif

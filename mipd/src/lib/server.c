@@ -291,6 +291,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                         check(rc != -1, "Failed to handle forward response from routerd");
                     } else {
                         MIPPackage *package = ForwardQueue_pop(server->forward_queue);
+                        check(package != NULL, "Invalid package popped from ForwardQueue");
                         MIPDServer_log(server, "Forward not found for destination: %d", package->m_header.dst_addr);
                         MIPPackage_destroy(package);
                     }
