@@ -15,4 +15,6 @@ typedef struct ApplicationMessage {
     struct ping_message message;
 } ApplicationMessage;
 
+#define ApplicationMessage_destroy(AM) if((AM)) free(AM)
+
 #endif
