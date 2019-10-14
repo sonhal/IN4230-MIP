@@ -9,13 +9,14 @@
 #include "../server.h"
 #include "../interface.h"
 #include "../link.h"
+#include "../mip_arp.h"
 
 void poison_reverse(MIPRouteTablePackage *package, MIP_ADDRESS destination){
     int i = 0;
     for(i = 0; i < package->num_entries; i++){
         if(package->entries[i].next_hop == destination){
             package->entries[i].cost = UINT_MAX;
-            printf("package poisoned: destination: %d\tcost: %u", package->entries[i].cost);
+            printf("package poisoned: destination: %d\tcost: %u\n", destination, package->entries[i].cost);
         }
     }
 }
@@ -61,7 +62,12 @@ int broadcast_route_table(MIPDServer *server, MIPRouteTablePackage *table_packag
 
         memcpy(tmp, table_package, sizeof(MIPRouteTablePackage));
         tmp->table_address = server->i_table->interfaces[i].mip_address;
-        poison_reverse(tmp, server->i_table->interfaces[i].mip_address);
+        MIP_ADDRESS destination = query_cache_socket_mip_address(server->cache, server->i_table->interfaces[i].raw_socket);
+        if(destination == 255){
+            MIPDServer_log(server, "Failed to get destination mip address raw socket connects to, might not be connected to another mipd node");
+            destination = tmp->table_address;
+        }
+        poison_reverse(tmp, destination);
 
         MIPDServer_log(server, "Broadcasting route table\tnum_entries: %d\tmip address: %d", tmp->num_entries, tmp->table_address);
         MIPPackage *package = MIPPackage_create_raw(server->i_table->interfaces[i].mip_address,
