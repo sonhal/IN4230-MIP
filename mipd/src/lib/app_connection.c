@@ -158,3 +158,18 @@ int read_from_domain_socket(int socket_fd, BYTE *buffer, size_t buffer_size){
     error:
         return -1;
 }
+
+// Returns a empty MIPPackage with the provided ping_message to be added to queue
+MIPPackage *create_queueable_ping_message_MIPPackage(struct ping_message *message){
+    BYTE default_mac[] = {0, 0, 0, 0, 0, 0};
+    MIPPackage *m_package = NULL;
+
+    // Create MIP packet
+    m_package = MIPPackage_create_raw(0, &default_mac, message->dst_mip_addr, &default_mac, message, sizeof(struct ping_message), 3);
+    check(m_package != NULL, "Failed to create MIPPackage");
+
+    return m_package;
+
+    error:
+        return NULL;
+}

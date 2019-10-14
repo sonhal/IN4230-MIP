@@ -39,4 +39,6 @@ struct ping_message *parse_ping_request(BYTE *buffer);
 
 int read_from_domain_socket(int socket_fd, BYTE *buffer, size_t buffer_size);
 
+MIPPackage *create_queueable_ping_message_MIPPackage(struct ping_message *message);
+
 #endif
