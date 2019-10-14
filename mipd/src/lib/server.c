@@ -132,8 +132,19 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event, char 
         } else {
             // Forward package
             // [Todo] add package to queue and request next destination
-            rc = request_forwarding(server, received_package->m_header.dst_addr, received_package);
-            check(rc != -1, "Failed to request forwarding for received package");
+            int timetolive = received_package->m_header.ttl;
+            if((timetolive - 1) < 0){
+                MIPDServer_log(server, "Dropping received package from mip src: %d\tto dst %d\tTTL is %d",
+                                        received_package->m_header.src_addr,
+                                        received_package->m_header.dst_addr,
+                                        timetolive);
+
+            }else {
+                received_package->m_header.ttl--;
+                rc = request_forwarding(server, received_package->m_header.dst_addr, received_package);
+                check(rc != -1, "Failed to request forwarding for received package");
+                return 0;
+            }
         }
     }
 
