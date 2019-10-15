@@ -9,7 +9,7 @@
 #define MIP_ADDRESS uint8_t
 #define MIP_BROADCAST_ADDRESS 255
 #define MIP_TABLE_PACKAGE_ENTRIES_MAX_SIZE 64
-#define MIP_TABLE_ENTRY_MAX_AGE_MILLI 10000
+#define MIP_TABLE_ENTRY_MAX_AGE_MILLI 5000
 
 typedef struct MIPRouteEntry {
     MIP_ADDRESS destination;
