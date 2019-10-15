@@ -103,6 +103,19 @@ int RouterServer_run(RouterServer *server){
 
     while(running){
         RouterServer_log(server," Polling...");
+        if(should_complete_route_broadcast(server)){
+            rc = broadcast_route_table(server->table, server->routing_fd);
+            check(rc != -1, "Failed to broadcast route table");
+            server->last_broadcast_milli = get_now_milli();
+        }
+
+        if(RouterServer_is_debug_active(server)){
+            RouterServer_log(server, "Route table:");
+            MIPRouteTable_print(server->table);
+        }
+
+        MIPRouteTable_remove_old_entries(server->table);
+        
         event_count = epoll_wait(server->epoll_fd, &events, EVENTS_BUFFER_SIZE, POLLING_TIMEOUT);
 
         int i = 0;
@@ -139,19 +152,6 @@ int RouterServer_run(RouterServer *server){
                 printf("Exiting...\n");
             }
         }
-        
-        if(should_complete_route_broadcast(server)){
-            rc = broadcast_route_table(server->table, server->routing_fd);
-            check(rc != -1, "Failed to broadcast route table");
-            server->last_broadcast_milli = get_now_milli();
-        }
-
-        if(RouterServer_is_debug_active(server)){
-            RouterServer_log(server, "Route table:");
-            MIPRouteTable_print(server->table);
-        }
-
-        MIPRouteTable_remove_old_entries(server->table);
     }
 
     return 1;
