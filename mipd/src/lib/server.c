@@ -90,10 +90,10 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
 
 
     // LOGG received packet to console
-    // char *received_package_str = MIPPackage_to_string(received_package);
-    // MIPDServer_log(server, " RECEIVED PACKET:\n%s", received_package_str);
-    // free(received_package_str);
-    // if(server->debug_enabled)print_cache(server->cache);
+    char *received_package_str = MIPPackage_to_string(received_package);
+    MIPDServer_log(server, " RECEIVED PACKET:\n%s", received_package_str);
+    free(received_package_str);
+    if(server->debug_enabled)print_cache(server->cache);
 
     if (received_package->m_header.tra == 0){
         // MIP arp response
