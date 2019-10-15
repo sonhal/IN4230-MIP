@@ -89,7 +89,7 @@ int recv_raw_mip_package(int sd, MIPPackage *package) {
     BYTE *tmp_p = package->message;
     // Parse raw package to mip_package
     memcpy(package, raw_package, sizeof(MIPPackage));
-    int payload_len_in_bytes = package->m_header.payload_len * MIP_PAYLOAD_WORD;
+    uint16_t payload_len_in_bytes = package->m_header.payload_len * MIP_PAYLOAD_WORD;
 
     memcpy(tmp_p, &(raw_package[sizeof(MIPPackage)]), payload_len_in_bytes);
     package->message = tmp_p;
