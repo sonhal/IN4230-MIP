@@ -41,7 +41,7 @@ MIPRouteTablePackage *parse_broadcasted_table(MIPPackage *package){
         return NULL;
 }
 
-
+// Poisons the table where next hop is destination, returns void
 void poison_reverse(MIPRouteTablePackage *package, MIP_ADDRESS destination){
     int i = 0;
     for(i = 0; i < package->num_entries; i++){
@@ -51,7 +51,9 @@ void poison_reverse(MIPRouteTablePackage *package, MIP_ADDRESS destination){
     }
 }
 
-
+// Broadcasts a routing table to the configured interfaces
+// Handles the Split horizon poisoning before sending table
+// Returns 1 on success, -1 on failure
 int broadcast_route_table(MIPDServer *server, MIPRouteTablePackage *table_package){
     int rc = 0;
     uint8_t ether_broadcast_address[] = ETH_BROADCAST_ADDR;
@@ -78,7 +80,6 @@ int broadcast_route_table(MIPDServer *server, MIPRouteTablePackage *table_packag
                                                     sizeof(MIPRouteTablePackage),
                                                     2);
 
-        MIPDServer_log(server, "sending route table with package:\n %s", MIPPackage_to_string(package));
         int out_socket = server->i_table->interfaces[i].raw_socket;
         struct sockaddr_ll *so_name = server->i_table->interfaces[i].so_name;
         rc = sendto_raw_mip_package(out_socket, so_name, package);
@@ -87,7 +88,7 @@ int broadcast_route_table(MIPDServer *server, MIPRouteTablePackage *table_packag
 
     MIPRouteTablePackage_destroy(table_package);
     MIPRouteTablePackage_destroy(tmp);
-    return 0;
+    return 1;
 
     error:
         MIPRouteTablePackage_destroy(tmp);
