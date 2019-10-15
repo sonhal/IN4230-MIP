@@ -32,7 +32,7 @@ RouterServer  *RouterServer_create(RouterdConfig *config){
     
     LIST_FOREACH(config->mip_addresses, first, next, cur){
         MIP_ADDRESS *address = cur->value;
-        MIPRouteTable_update(server->table, *address, 255, 0);
+        MIPRouteTable_update(server->table, *address, *address, 0);
     }
 
     //Instansiate sockets to default value
@@ -115,7 +115,7 @@ int RouterServer_run(RouterServer *server){
         }
 
         MIPRouteTable_remove_old_entries(server->table);
-        
+
         event_count = epoll_wait(server->epoll_fd, &events, EVENTS_BUFFER_SIZE, POLLING_TIMEOUT);
 
         int i = 0;
