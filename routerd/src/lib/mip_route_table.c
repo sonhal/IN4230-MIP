@@ -202,7 +202,7 @@ int MIPRouteTable_remove_old_entries(MIPRouteTable *table){
         MIPRouteEntry *entry = cur->value;
         check(entry != NULL, "Invalid entry - entry=NULL");
 
-        if(MIPRouteEntry_to_old(table, entry) && entry->next_hop != 255){
+        if(MIPRouteEntry_to_old(table, entry) && entry->cost != 0){
             MIPRouteEntry_destroy(entry);
             num_removed++;
         } else {
