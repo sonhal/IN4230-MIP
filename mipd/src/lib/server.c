@@ -248,7 +248,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                 check(rc != -1, "Failed to read route table package from routerd");
                 if(rc == 0){
                     handle_domain_socket_disconnect(server, &events[i]);
-                    server->route_socket->connected_socket_fd = -121;
+                    server->route_socket->connected_socket_fd = -1;
                 } else {
                     rc = broadcast_route_table(server, table_package);
                     check(rc != -1, "Failed to broadcast route table");   
@@ -268,7 +268,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
 
                 if(rc == 0){
                     handle_domain_socket_disconnect(server, &events[i]);
-                    server->forward_socket->connected_socket_fd = -111;
+                    server->forward_socket->connected_socket_fd = -1;
                 } else {
                     if(forward_found(*forward_response)){
                         rc = handle_forward_response(server, *forward_response);
@@ -297,9 +297,9 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                 MIPDServer_log(server, "application socket event");
                 bytes_read = read(events[i].data.fd, read_buffer, read_buffer_size);
 
-                if(bytes_read == 0){
+                if(bytes_read == 0 || bytes_read == -1){
                     handle_domain_socket_disconnect(server, &events[i]);
-                    server->app_socket->connected_socket_fd = -100;
+                    server->app_socket->connected_socket_fd = -1;
                 } else {
                     // Parse message on domain socket
                     struct ping_message *p_message = parse_ping_request(read_buffer);
