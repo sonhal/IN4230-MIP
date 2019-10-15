@@ -87,16 +87,11 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
     int i_pos = get_interface_pos_for_socket(server->i_table, event->data.fd);
     active_interface_so_name = server->i_table->interfaces[i_pos].so_name;
 
-    // LOGG received packet to console
-    char *received_package_str = MIPPackage_to_string(received_package);
-    MIPDServer_log(server, " RECEIVED PACKET:\n%s", received_package_str);
-    free(received_package_str);
-
     if (received_package->m_header.tra == 0){
         // MIP arp response
         rc = append_to_cache(server->cache, event->data.fd, received_package->m_header.src_addr, active_interface_so_name->sll_addr);
         check(rc != -1, "Failed to add MIP ARP response to cache");
-        print_cache(server->cache);
+        if(server->debug_enabled)print_cache(server->cache);
     } else if(received_package->m_header.tra == 1){
         // MIP arp request
         rc = handle_mip_arp_request(server->cache, received_package, &server->i_table->interfaces[i_pos]);
@@ -104,12 +99,15 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
 
     } else if (received_package->m_header.tra == 2){
         // MIP route table package
-        MIPDServer_log(server, "received route table package");
         rc = recv_route_table_broadcast(server, received_package);
         check(rc != -1, "Failed to receive new route table");
 
     }else if (received_package->m_header.tra == 3){
         MIPDServer_log(server,"Request is transport type request");
+        // LOGG received packet to console
+        //char *received_package_str = MIPPackage_to_string(received_package);
+        //MIPDServer_log(server, " RECEIVED PACKET:\n%s", received_package_str);
+        //free(received_package_str);
 
          // check if the request is to a mip address the mipd owns
         rc = get_interface_pos_for_mip_address(server->i_table, received_package->m_header.dst_addr);
