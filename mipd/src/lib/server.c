@@ -306,7 +306,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                 } else {
                     // Parse message on domain socket
                     struct ping_message *p_message = parse_ping_request(read_buffer);
-                    MIPDServer_log(server, "ping message:\ndst:%d\tcontent:%s", p_message->dst_mip_addr, p_message->content);
+                    MIPDServer_log(server, "ping message - dst:%d\tcontent:%s", p_message->dst_mip_addr, p_message->content);
 
                     rc = handle_domain_socket_request(server, p_message);
                     check(rc != -1, "Failed to handle domain socket event");

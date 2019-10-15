@@ -14,7 +14,7 @@ typedef struct RouterdConfig {
 } RouterdConfig;
 
 
-// Parses CLI arguments and returns the user configurations as a struct pointer
+// Parses CLI arguments and returns the user configurations as a struct pointer, returns NULL on failure
 RouterdConfig *parse_args(int argc, char *argv[]);
 
 

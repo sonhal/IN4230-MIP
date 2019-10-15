@@ -21,6 +21,8 @@ typedef struct MIPForwardRequest {
 // Handles a request for a Routing table lookup, returns the MIP address of the next hop to the destination MIP address, return 255 on failure
 MIP_ADDRESS handle_forwarding_request(MIPRouteTable *table, int socket);
 
+// Sends the result of a forwarding lookup back to the local MIP daemon,
+// returns 1 on success, -1 on failure
 int send_forwarding_response(int socket, MIP_ADDRESS next_hop);
 
 #endif

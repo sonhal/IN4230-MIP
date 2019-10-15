@@ -23,7 +23,7 @@ RouterServer  *RouterServer_create(RouterdConfig *config);
 
 void RouterServer_destroy(RouterServer *server);
 
-// Setup the socket connections and the epoll connection, must be ran before RouterServer_run
+// Setup the socket connections and the epoll connection, must be ran before RouterServer_run, returns 1 on success, -1 on failure
 int RouterServer_init(RouterServer *server);
 
 // Starts the server, function will block until the server is stoped, returns 0 if server exited normally
