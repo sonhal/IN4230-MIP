@@ -210,7 +210,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
         event_count = epoll_wait(epoll_fd, events, event_num, timeout);
         int i = 0;
         for(i = 0; i < event_count; i++){
-            memset(read_buffer, '\0', read_buffer_size);
+            memset(read_buffer, '\0', read_buffer_size + 1);
 
             // Event on the listening local domain socket, should only be for new connections
             if(events[i].data.fd == server->app_socket->listening_socket_fd){
