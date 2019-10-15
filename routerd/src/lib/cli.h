@@ -3,7 +3,7 @@
 
 #include "../../../commons/src/list.h"
 
-#define BROADCAST_FREQ_MILLI 10000
+#define BROADCAST_FREQ_MILLI 2000
 
 typedef struct RouterdConfig {
     char *routing_socket;
