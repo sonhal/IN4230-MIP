@@ -67,6 +67,11 @@ int main(int argc, char *argv[]){
     perror("socket");
     return 1;
     }
+    // Set timeout on socket
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    setsockopt(so, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
     /* Zero out name struct */
     memset(&so_name, 0, sizeof(struct sockaddr_un));
@@ -79,16 +84,12 @@ int main(int argc, char *argv[]){
     check(rc != -1, "[PING CLIENT] Failed to connect to domain socket: %s",so_name.sun_path);
 
     printf("[PING CLIENT]  ping message:\ndst:%d\tcontent:%s\n", p_message->dst_mip_addr, p_message->content);
-    /* Write works on sockets as well as files: */
+
+ 
+
+    // Write to mipd 
     long before = get_milli();
     rc = write(so, p_message, sizeof(struct ping_message));
-
-
-
-    struct timeval tv;
-    tv.tv_sec = 1;
-    tv.tv_usec = 0;
-    setsockopt(so, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
     rc = recv(so, p_response, sizeof(struct ping_message), 0);
     long after = get_milli();
@@ -103,7 +104,7 @@ int main(int argc, char *argv[]){
 
     free(p_message);
     free(p_response);
-    close(so);
+    if(so)close(so);
     return 0;
 
     error:
