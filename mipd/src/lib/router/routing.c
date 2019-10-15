@@ -11,16 +11,6 @@
 #include "../link.h"
 #include "../mip_arp.h"
 
-void poison_reverse(MIPRouteTablePackage *package, MIP_ADDRESS destination){
-    int i = 0;
-    for(i = 0; i < package->num_entries; i++){
-        if(package->entries[i].next_hop == destination){
-            package->entries[i].cost = UINT_MAX;
-            printf("package poisoned: destination: %d\tcost: %u\n", destination, package->entries[i].cost);
-        }
-    }
-}
-
 
 MIPRouteTablePackage *recv_table_to_be_broadcasted(int socket_fd){
     int rc = 0;
@@ -49,6 +39,16 @@ MIPRouteTablePackage *parse_broadcasted_table(MIPPackage *package){
     error:
         MIPRouteTablePackage_destroy(table_packet);
         return NULL;
+}
+
+
+void poison_reverse(MIPRouteTablePackage *package, MIP_ADDRESS destination){
+    int i = 0;
+    for(i = 0; i < package->num_entries; i++){
+        if(package->entries[i].next_hop == destination){
+            package->entries[i].cost = UINT_MAX;
+        }
+    }
 }
 
 
