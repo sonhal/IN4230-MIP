@@ -79,6 +79,7 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
     int rc = 0;
     struct sockaddr_ll *active_interface_so_name;
     MIPPackage *received_package = MIPPackage_create_empty();
+    check_mem(received_package);
 
     rc = recv_raw_mip_package(event->data.fd, received_package);
     //rc = receive_raw_mip_packet(event->data.fd, &e_frame, &received_so_name, &received_header);
@@ -286,7 +287,8 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
             // Raw socket event
             else if(is_socket_in_table(server->i_table, events[i].data.fd)){
                 MIPDServer_log(server, "raw socket packet");
-                handle_raw_socket_frame(server, &events[i]);
+                rc = handle_raw_socket_frame(server, &events[i]);
+                check(rc != -1, "Failed to handle raw socket package");
                 continue;
             }
 
