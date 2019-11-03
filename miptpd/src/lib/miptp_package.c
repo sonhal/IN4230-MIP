@@ -6,7 +6,25 @@
 #include "miptp_package.h"
 
 
-MIPTPPackage *MIPTPPackage_create(uint8_t PL, uint16_t port, uint16_t PSN, BYTE *data, uint16_t data_size){
+MIPTPPackage *MIPTPPackage_create(uint16_t port, uint16_t PSN, BYTE *data, uint16_t data_size){
+    MIPTPPackage *package = calloc(1, sizeof(MIPTPPackage));
+    package->miptp_header.PL = calc_pl(data_size);
+    package->miptp_header.port = port;
+    package->miptp_header.PSN = PSN;
+
+    package->data = calloc(data_size, sizeof(BYTE));
+    check_mem(data);
+    package->data_size = data_size;
+    memcpy(package->data, data, package->data_size);
+
+    return package;
+
+    error:
+        log_err("Failed to create MIPTPPackage in MIPTPPackage_create");
+        return NULL;
+}
+
+MIPTPPackage *MIPTPPackage_create_raw(uint8_t PL, uint16_t port, uint16_t PSN, BYTE *data, uint16_t data_size){
     MIPTPPackage *package = calloc(1, sizeof(MIPTPPackage));
     package->miptp_header.PL = PL;
     package->miptp_header.port = port;
@@ -62,7 +80,7 @@ MIPTPPackage *MIPTPPackage_deserialize(BYTE *s_package){
     MIPTPPackage_serialized_get_data(s_package, data);
     MIPTPPackage_serialized_get_header(s_package, &header);
 
-    MIPTPPackage *package = MIPTPPackage_create(header.PL, header.port, header.PSN, data, data_size);
+    MIPTPPackage *package = MIPTPPackage_create_raw(header.PL, header.port, header.PSN, data, data_size);
     check(package != NULL, "Failed to create MIPTPPackage for deserialized data");
 
     return package;
@@ -83,4 +101,11 @@ MIPTPPackage_serialized_get_data(BYTE *s_package, BYTE *data){
     MIPTPPackage_serialized_get_data_size(s_package, &data_size);
 
     memcpy(data, &s_package[sizeof(MIPTPHeader) + sizeof(uint16_t)], data_size);
+}
+
+uint8_t calc_pl(uint16_t data_size){
+    if(data_size % 4 != 0){
+        return 4 - (data_size % 4); 
+    }
+    return 0;
 }

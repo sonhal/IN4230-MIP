@@ -6,7 +6,7 @@
 #include "../src/lib/miptp_package.h"
 
 char *test_MIPTPPackage_serialize() {
-    MIPTPPackage *package = MIPTPPackage_create(2, 16383, 1, "Hello", strlen("Hello"));
+    MIPTPPackage *package = MIPTPPackage_create(16383, 1, "Hello", strlen("Hello"));
     mu_assert(package != NULL, "Failed to create MIPTPPackage");
 
     BYTE *s_package = MIPTPPackage_serialize(package);
@@ -18,7 +18,7 @@ char *test_MIPTPPackage_serialize() {
 }
 
 char *test_MIPTPPackage_deserialize() {
-    MIPTPPackage *package = MIPTPPackage_create(2, 16383, 1, "Hello", strlen("Hello"));
+    MIPTPPackage *package = MIPTPPackage_create(16383, 1, "Hello", strlen("Hello"));
     mu_assert(package != NULL, "Failed to create MIPTPPackage");
 
     BYTE *s_package = MIPTPPackage_serialize(package);
@@ -39,7 +39,7 @@ char *test_MIPTPPackage_deserialize() {
 }
 
 char *test_MIPTPPackage_create_destroy() {
-    MIPTPPackage *package = MIPTPPackage_create(2, 16383, 1, "Hello", strlen("Hello"));
+    MIPTPPackage *package = MIPTPPackage_create(16383, 1, "Hello", strlen("Hello"));
     mu_assert(package != NULL, "Failed to create MIPTPPackage");
 
     MIPTPPackage_destroy(package);
@@ -47,6 +47,25 @@ char *test_MIPTPPackage_create_destroy() {
     return NULL;
 }
 
+char *test_calc_pl() {
+    uint16_t data_size = 5;
+
+    uint8_t result = 0;
+    result = calc_pl(data_size);
+    mu_assert(result == 3, "Wrong PL value calculated");
+
+    result = 0;
+    data_size = 7;
+    result = calc_pl(data_size);
+    mu_assert(result == 1, "Wrong PL value calculated");
+
+    result = 0;
+    data_size = 0;
+    result = calc_pl(data_size);
+    mu_assert(result == 0, "Wrong PL value calculated");
+
+    return NULL;
+}
 
 char *all_tests(){
 
@@ -55,6 +74,7 @@ char *all_tests(){
     mu_run_test(test_MIPTPPackage_create_destroy);
     mu_run_test(test_MIPTPPackage_serialize);
     mu_run_test(test_MIPTPPackage_deserialize);
+    mu_run_test(test_calc_pl);
 
     return NULL;
 }
