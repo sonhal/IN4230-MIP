@@ -10,7 +10,7 @@ struct mip_header {
     uint16_t payload_len: 9;
     MIP_ADDRESS dst_addr;
     MIP_ADDRESS src_addr;
-} __attribute__((packed));
+}__attribute__((packed));
 
 struct mip_header *create_arp_request_mip_header(MIP_ADDRESS src_addr);
 
