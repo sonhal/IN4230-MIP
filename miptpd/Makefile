@@ -25,7 +25,6 @@ LIB_TARGET=build/libmiptpd.a
 all: commons $(LIB_TARGET) $(MAIN_TARGET) tests
 
 dev: CFLAGS=-g -Wall -Isrc -Wall -Wextra $(OPTFLAGS)
-
 dev: all
 
 # Exectable
