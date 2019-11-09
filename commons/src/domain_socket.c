@@ -34,8 +34,7 @@ int setup_domain_socket(struct sockaddr_un *so_name, char *socket_name, unsigned
     // Delete socket file if it already exists
     unlink(so_name->sun_path);
 
-    /* Bind socket to socket name (file path)
-       What happes if we pass &so_name? */
+    // Bind socket to socket name (file path)
     rc = bind(so, (const struct sockaddr*)so_name, sizeof(struct sockaddr_un));
     check(rc != -1, "Binding socket to local address failed");
 

@@ -14,7 +14,6 @@
 
 #include "dbg.h"
 
-
 int create_domain_socket();
 
 // Sets up a socket with the given file name, returns socket fd on success, -1 on failure
