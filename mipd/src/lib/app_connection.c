@@ -18,7 +18,7 @@
 #define BUF_SIZE 256
 
 
-// Sets up a socket wit the given file name
+// Sets up a socket with the given file name
 int create_domain_socket(){
     int so = 0;
 
