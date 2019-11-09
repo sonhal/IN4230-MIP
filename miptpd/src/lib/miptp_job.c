@@ -15,6 +15,15 @@ SlidingWindow SlidingWindow_create(uint16_t sequence_base, uint16_t window_size)
     return window;
 }
 
+// Updates
+void SlidingWindow_update(SlidingWindow *window, uint16_t seqence_nr){
+    // If you receive a request number where Rn > Sb 
+    if(seqence_nr > window->sequence_base){
+        window->sequence_max = (window->sequence_max - window->sequence_base) + seqence_nr;
+        window->sequence_base = seqence_nr;
+    }
+}
+
 // Returns a Queue of the next MIPTPackages in the window
 // Caller takes ownership of the pointer
 Queue *MIPTPJob_next_packages(MIPTPJob *job){
@@ -58,12 +67,29 @@ MIPTPPackage *MIPTPJob_next_package(MIPTPJob *job, uint16_t sequence_nr){
 }
 
 
-MIPTPJob *MIPTPJob_create(BYTE *data, uint16_t data_size, unsigned long timeout_len){
+// Receives and handles a ACK from the other MIPTP daemon.
+// Returns 1 on success, 0 on failure
+int MIPTPJob_receive_ack(MIPTPJob *job, uint16_t sequence_nr){
+    SlidingWindow_update(&job->sliding_window, sequence_nr);
+    return 1;
+}
+
+
+int MIPTPJob_finished(MIPTPJob *job){
+    unsigned int num_packages = job->data_size / MAX_DATA_BATCH_SIZE_BYTES;
+    if(job->data_size % MAX_DATA_BATCH_SIZE_BYTES) num_packages++;
+    
+    // seqence_base is index based, we have to deduct 1 from num packages when checking
+    return job->sliding_window.sequence_base >= (num_packages - 1);
+}
+
+
+MIPTPJob *MIPTPJob_create(BYTE *data, uint16_t data_size, unsigned long timeout){
     MIPTPJob *job = calloc(1, sizeof(MIPTPJob));
     check_mem(job);
 
     job->sliding_window = SlidingWindow_create(0, WINDOW_SIZE);
-    job->timeout_len = timeout_len;
+    job->timeout = timeout;
     job->data_size = data_size;
     job->data = calloc(job->data_size, sizeof(BYTE));
     check_mem(job->data);

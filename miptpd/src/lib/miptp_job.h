@@ -19,7 +19,7 @@ typedef struct SlidingWindow
 typedef struct MIPTPJob
 {
     uint16_t port: 14;
-    unsigned long timeout_len;
+    unsigned long timeout;
     unsigned long last_ack;
     BYTE *data;
     uint16_t data_size;
@@ -28,7 +28,7 @@ typedef struct MIPTPJob
 } MIPTPJob;
 
 
-MIPTPJob *MIPTPJob_create(BYTE *data, uint16_t data_size, unsigned long timeout_len);
+MIPTPJob *MIPTPJob_create(BYTE *data, uint16_t data_size, unsigned long timeout);
 
 void MIPTPJob_destroy(MIPTPJob *job);
 
@@ -36,7 +36,7 @@ Queue *MIPTPJob_next_packages(MIPTPJob *job);
 
 MIPTPPackage *MIPTPJob_next_package(MIPTPJob *job, uint16_t sequence_nr);
 
-Queue *MIPTPJob_receive_ack(MIPTPJob *job, MIPTPPackage *package);
+int MIPTPJob_receive_ack(MIPTPJob *job, uint16_t sequence_nr);
 
 // returns 1 of the job is complete or timed out, 0 if it is still active
 int MIPTPJob_finished(MIPTPJob *job);
