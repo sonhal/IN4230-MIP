@@ -1,17 +1,20 @@
 #include <string.h>
 
-#include "../../commons/src/dbg.h"
+#include "../src/dbg.h"
 #include "minunit.h"
 
-#include "../src/lib/client_package.h"
+#include "../src/client_package.h"
 
 
 char *test_ClientPackage_serialize() {
     ClientPackage *package = ClientPackage_create(10, 110, "Hello", strlen("Hello"));
     mu_assert(package != NULL, "Failed to create MIPTPackage");
     
-    BYTE *serialized_package = ClientPackage_serialize(package);
+    int s_size = 0;
+    BYTE serialized_package = calloc(100, sizeof(char));
+    s_size = ClientPackage_serialize(serialized_package, package);
     mu_assert(serialized_package != NULL, "Failed to serialize package");
+    mu_assert(s_size != 0, "Failed to serialize package, size is 0");
     char *ser_string = calloc(MAX_DATA_SIZE_BYTES, sizeof(BYTE));
 
     ClientPackage_serialized_get_data(serialized_package, ser_string);
@@ -34,7 +37,9 @@ char *test_ClientPackage_deserialize() {
     ClientPackage *package = ClientPackage_create(1, 11, "Hello", strlen("Hello"));
     mu_assert(package != NULL, "Failed to create MIPTPackage");
     
-    BYTE *serialized_package = ClientPackage_serialize(package);
+    int s_size = 0;
+    BYTE serialized_package = calloc(100, sizeof(char));
+    s_size = ClientPackage_serialize(serialized_package, package);
     mu_assert(serialized_package != NULL, "Failed to serialize package");
     ClientPackage *package2 = ClientPackage_deserialize(serialized_package);
 
@@ -55,7 +60,9 @@ char *test_ClientPackage_deserialize_no_data_package() {
     ClientPackage *package = ClientPackage_create(1, 11, "", 0);
     mu_assert(package != NULL, "Failed to create MIPTPackage");
     
-    BYTE *serialized_package = ClientPackage_serialize(package);
+    int s_size = 0;
+    BYTE serialized_package = calloc(100, sizeof(char));
+    s_size = ClientPackage_serialize(serialized_package, package);
     mu_assert(serialized_package != NULL, "Failed to serialize package");
     ClientPackage *package2 = ClientPackage_deserialize(serialized_package);
 

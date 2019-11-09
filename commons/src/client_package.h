@@ -1,12 +1,12 @@
-#ifndef _MIPTP_PACKAGE_H
-#define _MIPTP_PACKAGE_H
+#ifndef _MIPTP_CLIENT_PACKAGE_H
+#define _MIPTP_CLIENT_PACKAGE_H
 
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "../../../commons/src/definitions.h"
+#include "definitions.h"
 
-#define MAX_DATA_SIZE_BYTES 1492
+#define MAX_DATA_SIZE_BYTES 65535
 
 typedef struct ClientPackage {
     uint16_t port;
@@ -16,14 +16,15 @@ typedef struct ClientPackage {
 } ClientPackage;
 
 
-
 /*  Creates a byte array representation of the ClientPackage.
     Format:
         - port: 2 bytes
         - destination: 1 byte
         - data_size: 2 bytes
-        - data: max 65535 bytes */
-BYTE *ClientPackage_serialize(ClientPackage *package);
+        - data: max 65535 bytes
+    Returns the size of the size of the serialized package
+*/
+int ClientPackage_serialize(BYTE *buffer, ClientPackage *package);
 
 ClientPackage *ClientPackage_deserialize(BYTE *serialized_package);
 
