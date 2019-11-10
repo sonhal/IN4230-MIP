@@ -37,7 +37,7 @@ char *all_tests(){
     mu_suite_start();
 
     mu_run_test(test_MIPTPServer_create_destroy);
-    mu_run_test(test_MIPTPServer_init);
+    //mu_run_test(test_MIPTPServer_init);
 
     return NULL;
 }
