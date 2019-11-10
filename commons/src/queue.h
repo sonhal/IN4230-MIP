@@ -17,6 +17,6 @@ typedef List Queue;
 #define Queue_count List_count
 #define Queue_peek List_last
 
-#define QUEUE_FOREACH(Q, V) LIST_FOREACH(Q, last, prev, V);
+#define QUEUE_FOREACH(Q, V) LIST_FOREACH(Q, last, prev, V)
 
 #endif
