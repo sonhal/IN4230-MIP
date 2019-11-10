@@ -7,11 +7,11 @@
 
 
 char *test_ClientPackage_serialize() {
-    ClientPackage *package = ClientPackage_create(10, 110, "Hello", strlen("Hello"));
+    ClientPackage *package = ClientPackage_create(10, 110, MIPTP_SENDER, "Hello", strlen("Hello"));
     mu_assert(package != NULL, "Failed to create MIPTPackage");
     
     int s_size = 0;
-    BYTE serialized_package = calloc(100, sizeof(char));
+    BYTE *serialized_package = calloc(100, sizeof(char));
     s_size = ClientPackage_serialize(serialized_package, package);
     mu_assert(serialized_package != NULL, "Failed to serialize package");
     mu_assert(s_size != 0, "Failed to serialize package, size is 0");
@@ -28,17 +28,22 @@ char *test_ClientPackage_serialize() {
     ClientPackage_serialized_get_port(serialized_package, &port);
     mu_assert(port == 10, "Failed to get port from serialized package");
 
+    enum MIPTPClientType type = 1;
+    ClientPackage_serialized_get_type(serialized_package, &type);
+    mu_assert(type == MIPTP_SENDER, "Failed to get type from serialized package");
+
+
     ClientPackage_destroy(package);
     free(serialized_package);
     return NULL;
 }
 
 char *test_ClientPackage_deserialize() {
-    ClientPackage *package = ClientPackage_create(1, 11, "Hello", strlen("Hello"));
+    ClientPackage *package = ClientPackage_create(1, 11, MIPTP_SENDER, "Hello", strlen("Hello"));
     mu_assert(package != NULL, "Failed to create MIPTPackage");
     
     int s_size = 0;
-    BYTE serialized_package = calloc(100, sizeof(char));
+    BYTE *serialized_package = calloc(100, sizeof(char));
     s_size = ClientPackage_serialize(serialized_package, package);
     mu_assert(serialized_package != NULL, "Failed to serialize package");
     ClientPackage *package2 = ClientPackage_deserialize(serialized_package);
@@ -46,6 +51,7 @@ char *test_ClientPackage_deserialize() {
     mu_assert(package2 != NULL, "Failed to deserialize package, pointer is NULL");
     mu_assert(package->port == package2->port, "Bad deserialization, port is not equal");
     mu_assert(package->destination == package2->destination, "Bad deserialization, destination is not equal");
+    mu_assert(package->type == package2->type, "Bad deserialization, type is not equal");
     mu_assert(package->data_size == package2->data_size, "Bad deserialization, data_size is not equal");
     mu_assert(strncmp(package->data, package2->data, package->data_size) == 0, "Bad deserialization, data is not equal");
 
@@ -57,11 +63,11 @@ char *test_ClientPackage_deserialize() {
 }
 
 char *test_ClientPackage_deserialize_no_data_package() {
-    ClientPackage *package = ClientPackage_create(1, 11, "", 0);
+    ClientPackage *package = ClientPackage_create(1, 11, MIPTP_SENDER, "", 0);
     mu_assert(package != NULL, "Failed to create MIPTPackage");
     
     int s_size = 0;
-    BYTE serialized_package = calloc(100, sizeof(char));
+    BYTE *serialized_package = calloc(100, sizeof(char));
     s_size = ClientPackage_serialize(serialized_package, package);
     mu_assert(serialized_package != NULL, "Failed to serialize package");
     ClientPackage *package2 = ClientPackage_deserialize(serialized_package);
@@ -80,7 +86,7 @@ char *test_ClientPackage_deserialize_no_data_package() {
 }
 
 char *test_ClientPackage_create_destroy() {
-    ClientPackage *package = ClientPackage_create(10, 110, "Hello", strlen("Hello"));
+    ClientPackage *package = ClientPackage_create(10, 110, MIPTP_SENDER, "Hello", strlen("Hello"));
     mu_assert(package != NULL, "Failed to create MIPTPackage");
     mu_assert(package->data_size == strlen("Hello"), "Failed to set data_size");
     mu_assert(package->destination == 110, "Failed to set destination");
