@@ -33,12 +33,14 @@ void MIPTPPackage_destroy(MIPTPPackage *package);
         - data_size:    2 bytes 
         - data:         max 1492 bits
 */
-BYTE *MIPTPPackage_serialize(MIPTPPackage *package);
+size_t MIPTPPackage_serialize(BYTE *buffer, MIPTPPackage *package);
 
 MIPTPPackage *MIPTPPackage_deserialize(BYTE *s_package);
 
 MIPTPPackage_serialized_get_header(BYTE *s_package, MIPTPHeader *header);
+
 MIPTPPackage_serialized_get_data_size(BYTE *s_package, uint16_t *data_size);
+
 MIPTPPackage_serialized_get_data(BYTE *s_package, BYTE *data);
 
 uint8_t calc_pl(uint16_t data_size);

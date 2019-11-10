@@ -6,10 +6,12 @@
 #include "../src/lib/miptp_package.h"
 
 char *test_MIPTPPackage_serialize() {
+    int byte_size = 0;
     MIPTPPackage *package = MIPTPPackage_create(16383, 1, "Hello", strlen("Hello"));
     mu_assert(package != NULL, "Failed to create MIPTPPackage");
 
-    BYTE *s_package = MIPTPPackage_serialize(package);
+    BYTE *s_package = calloc(sizeof(MIPTPPackage) + package->data_size, sizeof(BYTE));
+    byte_size = MIPTPPackage_serialize(s_package, package);
     mu_assert(s_package != NULL, "Failed to serialize MIPTPPackage");
     MIPTPPackage_destroy(package);
     free(s_package);
@@ -18,10 +20,12 @@ char *test_MIPTPPackage_serialize() {
 }
 
 char *test_MIPTPPackage_deserialize() {
+    int byte_size = 0;
     MIPTPPackage *package = MIPTPPackage_create(16383, 1, "Hello", strlen("Hello"));
     mu_assert(package != NULL, "Failed to create MIPTPPackage");
 
-    BYTE *s_package = MIPTPPackage_serialize(package);
+    BYTE *s_package = calloc(sizeof(MIPTPPackage) + package->data_size, sizeof(BYTE));
+    byte_size = MIPTPPackage_serialize(s_package, package);
     mu_assert(s_package != NULL, "Failed to serialize MIPTPPackage");
 
     MIPTPPackage *package2 = MIPTPPackage_deserialize(s_package);

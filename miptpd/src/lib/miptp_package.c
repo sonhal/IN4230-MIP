@@ -51,21 +51,23 @@ void MIPTPPackage_destroy(MIPTPPackage *package){
     }
 }
 
-BYTE *MIPTPPackage_serialize(MIPTPPackage *package){
+// Serializes the contents of the MIPTPPackage into the buffer
+// On success returns the byte size of the serialized package
+// Returns -1 on failure
+size_t MIPTPPackage_serialize(BYTE *buffer, MIPTPPackage *package){
     // Size of MIPTPPackage minus the data pointer
     size_t package_size = sizeof(MIPTPPackage) - sizeof(BYTE *);
     package_size += package->data_size;
-    BYTE *s_package = calloc(package_size, sizeof(BYTE));
 
-    memcpy(s_package, &package->miptp_header, sizeof(MIPTPHeader));
-    memcpy(&s_package[sizeof(MIPTPHeader)], &package->data_size, sizeof(uint16_t));
-    memcpy(&s_package[sizeof(MIPTPHeader) + sizeof(uint16_t)], package->data, package->data_size);
+    memcpy(buffer, &package->miptp_header, sizeof(MIPTPHeader));
+    memcpy(&buffer[sizeof(MIPTPHeader)], &package->data_size, sizeof(uint16_t));
+    memcpy(&buffer[sizeof(MIPTPHeader) + sizeof(uint16_t)], package->data, package->data_size);
 
-    return s_package;
+    return package_size;
 
     error:
         log_err("Failed to serialize MIPTPPackage in MIPTPPackage_serialize");
-        return NULL;
+        return -1;
 }
 
 MIPTPPackage *MIPTPPackage_deserialize(BYTE *s_package){
