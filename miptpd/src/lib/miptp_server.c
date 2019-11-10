@@ -23,7 +23,7 @@ MIPTPServer *MIPTPServer_create(char *mipd_socket, char *app_connections_socket,
     
     server->app_connections_socket = BoundSocket_create(app_connections_socket);
     check(server->app_connections_socket != NULL, "Failed to set the BoundSocket");
-    server->app_controller = MIPTPAppController_create(MAX_APP_CONNECTIONS);
+    server->app_controller = MIPTPAppController_create(-1, MAX_APP_CONNECTIONS);
     check(server->app_controller != NULL, "Failed to set the AppController");
 
     server->debug_active = debug_active;
@@ -66,6 +66,9 @@ int MIPTPServer_init(MIPTPServer *server){
     server->epoll_fd = setup_epoll(&events_to_handle, 3);
     check(server->epoll_fd != -1, "Failed to setup epoll");
 
+    // Set the correct mipd socket in the AppController
+    server->app_controller->mipd_socket = server->mipd_socket;
+
     MIPTPServer_log(server, "MIPTPServer is initialized in debug mode");
 
     return 1;
@@ -87,12 +90,24 @@ int MIPTPServer_run(MIPTPServer *server){
 
         event_count = epoll_wait(server->epoll_fd, &events, EVENTS_BUFFER_SIZE, POLLING_TIMEOUT);
 
+        // Cycle the running jobs
+        rc = MIPTPAppController_pump(server->app_controller);
+        check(rc != -1, "Failed to cycle app controller jobs");
+
         int i = 0;
         for(i = 0; i < event_count; i++){
             memset(read_buffer, '\0', PACKET_BUFFER_SIZE);
 
             if(events[i].data.fd == server->mipd_fd){
                 MIPTPServer_log(server, "mipd event");
+                bytes_read = read(events[i].data.fd, read_buffer, PACKET_BUFFER_SIZE);
+                if(bytes_read == 0){
+                    MIPTPServer_log(server, "MIPD has disconnected, shutting down");
+                    return 1;
+                }else {           
+                    rc = MIPTPAppController_handle_mipd_package(server->app_controller, events[i].data.fd, &read_buffer);
+                    check(rc != -1, "Failed to handle package from mipd");
+                }
                 continue;
             }
 
