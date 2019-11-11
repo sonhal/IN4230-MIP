@@ -32,7 +32,10 @@ MIPTPPackage *MIPTPSendJob_next_package(MIPTPSendJob *job, uint16_t sequence_nr)
 
 int MIPTPSendJob_receive_package(MIPTPSendJob *job, MIPTPPackage *package);
 
-// returns 1 of the job is complete or timed out, 0 if it is still active
-int MIPTPSendJob_finished(MIPTPSendJob *job);
+// returns 1 of the job is complete, 0 if it is still active
+int MIPTPSendJob_is_complete(MIPTPSendJob *job);
+
+// Returns 1 if the job is timed out, 0 if it is still active
+int MIPTPSendJob_is_timed_out(MIPTPSendJob *job);
 
 #endif
