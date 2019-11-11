@@ -8,7 +8,7 @@
 
 #define MAX_DATA_SIZE_BYTES 65535
 
-enum MIPTPClientType {MIPTP_SENDER = 0, MIPTP_RECEIVER = 1};
+enum MIPTPClientType {MIPTP_SENDER = 1, MIPTP_RECEIVER = 2};
 
 typedef struct ClientPackage {
     uint16_t port;
