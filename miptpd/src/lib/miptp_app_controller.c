@@ -5,33 +5,10 @@
 
 #include "../../../commons/src/dbg.h"
 #include "../../../commons/src/polling.h"
-
-#include "miptp_app_controller.h"
 #include "../../../commons/src/client_package.h"
 
-
-AppConnection_create(uint16_t port, int socket){
-    AppConnection *connection = calloc(1, sizeof(AppConnection));
-    check_mem(connection);
-
-    connection->port = port;
-    connection->socket = socket;
-
-    return connection;
-
-    error:
-        log_err("Failed to create AppConnection");
-        return NULL;
-}
-
-void AppConnection_destroy(AppConnection *connection){
-    if(connection){
-        if(connection->socket) close(connection->socket);
-        free(connection);
-    }
-}
-
-
+#include "app_connection.h"
+#include "miptp_app_controller.h"
 
 MIPTPAppController *MIPTPAppController_create(int mipd_socket, unsigned int max_connections){
     MIPTPAppController *controller = calloc(1, sizeof(MIPTPAppController));
@@ -67,14 +44,26 @@ int MIPTPAppController_handle_app_package(MIPTPAppController *controller, int so
     check(package->data != NULL, "Invalid data pointer, NULL");
 
     LIST_FOREACH(controller->connections, first, next, cur){
-        AppConnection *connection = (AppConnection *)cur->value;
-        check(connection != NULL, "Invalid value, connection is NULL");
+        AppConnection *not_ready_connection = (AppConnection *)cur->value;
+        check(not_ready_connection != NULL, "Invalid value, not_ready_connection is NULL");
 
-        if(connection->socket == socket){
-            connection->port = package->port;
-            connection->type = package->type;
-            connection->job = MIPTPJob_create(connection->port, package->data, package->data_size, controller->timeout);
-            check(connection->job != NULL, "Failed to set the MIPTPJob");
+        if(not_ready_connection->socket == socket){
+            enum AppConnectionStatus status = connection_type(package->type);
+            AppConnection *complete_connection = AppConnection_create(status,
+                                                            socket,
+                                                            package->port,
+                                                            package->destination,
+                                                            package->data,
+                                                            package->data_size,
+                                                            controller->timeout);
+            check(complete_connection != NULL, "Failed to create the complete AppConnection");
+
+            // Remove and destroy the tmp connection
+            List_remove(controller->connections, cur);
+            AppConnection_destroy(not_ready_connection);
+
+            // Add the new complete connection to the connections list
+            List_push(controller->connections, complete_connection);
         }
     }
     return 1;
@@ -84,7 +73,10 @@ int MIPTPAppController_handle_app_package(MIPTPAppController *controller, int so
 }
 
 
+
 int MIPTPAppController_handle_mipd_package(MIPTPAppController *app_controller, int mipd_socket, BYTE *s_package){
+    int rc = 0;
+
     check(app_controller != NULL, "Bad argument, app_controller is NULL");
     check(s_package != NULL, "Bad argument, s_package is NULL");
     MIPTPPackage *package = ClientPackage_deserialize(s_package);
@@ -95,8 +87,9 @@ int MIPTPAppController_handle_mipd_package(MIPTPAppController *app_controller, i
         check(connection != NULL, "Invalid value, connection is NULL");
 
         if(connection->port == package->miptp_header.port){
-            check(connection->job != NULL, "Invalid state connection(port: %d) MIPTPJob is NULL", connection->port);
-            MIPTPJob_receive_package(connection->job, package);
+
+            rc = AppConnection_receive_package(connection, package);
+            check(rc != -1, "AppConnection failed to receive package");
         }
     } 
     return 1;
@@ -120,7 +113,7 @@ int MIPTPAppController_handle_connection(MIPTPAppController *app_controller, int
     check(rc != -1, "Failed to add file descriptor to epoll");
 
     // TODO parse domain socket
-    AppConnection  *connection = AppConnection_create(0, new_socket);
+    AppConnection  *connection = AppConnection_create_not_ready(new_socket);
 
     List_push(app_controller->connections ,connection);
 
@@ -172,7 +165,7 @@ int MIPTPAppController_disconnect(MIPTPAppController *controller, int socket){
 }
 
 
-int MIPTPAppController_pump(MIPTPAppController *controller){
+int MIPTPAppController_handle_outgoing(MIPTPAppController *controller){
     int rc = 0;
     Queue  *next_packages = NULL;
 
@@ -180,18 +173,43 @@ int MIPTPAppController_pump(MIPTPAppController *controller){
         AppConnection *connection = (AppConnection *)cur->value;
         check(connection != NULL, "Invalid value, connection is NULL");
 
-        // If a Job has been created for the connection
-        if(connection->job != NULL){
-            next_packages = MIPTPJob_next_packages(connection->job);
-            QUEUE_FOREACH(next_packages, q_cur){
-                // TODO - Push on the network
-                MIPTPPackage *package = (MIPTPPackage *)q_cur->value;
-                check(package != NULL, "Invalid state, MIPTPPackage is NULL");
+        // Will might return an empty queue
+        next_packages = AppConnection_next_packages(connection);
+        check(next_packages != NULL, "AppConnection failed to create next_packages");
 
-                rc = MIPTPAppController_send(controller, controller->mipd_socket, package);
-                check(rc != -1, "Failed to send package(seqnr: %d, port: %d) to mipd", package->miptp_header.PSN, package->miptp_header.port);
-            }
-            Queue_destroy(next_packages);
+        QUEUE_FOREACH(next_packages, q_cur){
+            // TODO - Push on the network
+            MIPTPPackage *package = (MIPTPPackage *)q_cur->value;
+            check(package != NULL, "Invalid state, MIPTPPackage is NULL");
+
+            rc = MIPTPAppController_send(controller, controller->mipd_socket, package);
+            check(rc != -1, "Failed to send package(seqnr: %d, port: %d) to mipd", package->miptp_header.PSN, package->miptp_header.port);
+        }
+        Queue_destroy(next_packages);
+    }
+
+    return 1;
+
+    error:
+        return -1;
+}
+
+// Checks for finished packages returning the results to the connected applications
+int MIPTPAppController_handle_completes(MIPTPAppController *controller){
+    check(controller != NULL, "Invalid argument, controller is NULL");
+    int rc = 0;
+    ClientPackage *result = NULL;
+
+    LIST_FOREACH(controller->connections, first, next, cur){
+        AppConnection *connection = (AppConnection *)cur->value;
+        check(connection != NULL, "Invalid value, connection is NULL");
+
+        if(AppConnection_is_complete(connection)){
+            result = AppConnection_result(connection);
+            MIPTPAppController_send_ClientPackage(controller, connection->socket, result);
+
+            AppConnection_close_destroy(connection);
+            List_remove(controller->connections, cur);
         }
     }
 
@@ -202,7 +220,7 @@ int MIPTPAppController_pump(MIPTPAppController *controller){
 }
 
 
-int MIPTPAppController_send(MIPTPAppController *controller, int socket, MIPTPPackage *package){
+int MIPTPAppController_send_MIPTPPackage(MIPTPAppController *controller, int socket, MIPTPPackage *package){
     check(controller != NULL, "controller argument is NULL");
     check(package != NULL, "package argument is NULL");
     int rc = 0;
@@ -216,6 +234,29 @@ int MIPTPAppController_send(MIPTPAppController *controller, int socket, MIPTPPac
     check(rc != -1, "Failed to send the package to mipd - socket: %d\tbytes: %d", socket, rc);
 
     MIPTPPackage_destroy(package);
+    if(s_package) free(s_package);
+
+    return 1;
+
+    error:
+        return -1;
+}
+
+
+int MIPTPAppController_send_ClientPackage(MIPTPAppController *controller, int socket, ClientPackage *package){
+    check(controller != NULL, "controller argument is NULL");
+    check(package != NULL, "package argument is NULL");
+    int rc = 0;
+    BYTE *s_package = calloc(sizeof(ClientPackage) + package->data_size, sizeof(BYTE));
+    check_mem(s_package);
+
+    rc = ClientPackage_serialize(s_package, package);
+    check(rc != -1, "Bad seralization of the package");
+
+    rc = send(socket, s_package, rc, 0);
+    check(rc != -1, "Failed to send the package to mipd - socket: %d\tbytes: %d", socket, rc);
+
+    ClientPackage_destroy(package);
     if(s_package) free(s_package);
 
     return 1;

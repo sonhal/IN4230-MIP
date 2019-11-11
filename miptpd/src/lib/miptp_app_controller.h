@@ -8,14 +8,7 @@
 #include "../../../commons/src/client_package.h"
 
 #include "miptp_send_job.h"
-
-typedef struct AppConnection
-{
-    uint16_t port: 14;
-    int socket;
-    enum MIPTPClientType type;
-    MIPTPSendJob *job;
-} AppConnection;
+#include "miptp_receive_job.h"
 
 
 typedef struct MIPTPAppController
@@ -42,8 +35,12 @@ int MIPTPAppController_is_a_connection(MIPTPAppController *controller, int socke
 
 int MIPTPAppController_disconnect(MIPTPAppController *controller, int socket);
 
-int MIPTPAppController_pump(MIPTPAppController *controller);
+int MIPTPAppController_handle_outgoing(MIPTPAppController *controller);
 
-int MIPTPAppController_send(MIPTPAppController *controller, int socket, MIPTPPackage *package);
+int MIPTPAppController_handle_completes(MIPTPAppController *controller);
+
+int MIPTPAppController_send_MIPTPPackage(MIPTPAppController *controller, int socket, MIPTPPackage *package);
+
+int MIPTPAppController_send_ClientPackage(MIPTPAppController *controller, int socket, ClientPackage *package);
 
 #endif
