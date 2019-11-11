@@ -49,7 +49,7 @@ Queue *AppConnection_next_packages(AppConnection *connection);
 int AppConnection_receive_package(AppConnection *connection, MIPTPPackage *package);
 
 // AppConnectionStatus must be complete else a NULL pointer will be returned
-ClientPackage *AppConnection_response(AppConnection *connection);
+ClientPackage *AppConnection_result(AppConnection *connection);
 
 #define AppConnection_status_is(A, S) ((A)->status == S)
 

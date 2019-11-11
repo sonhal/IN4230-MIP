@@ -1,3 +1,6 @@
+
+#include "../../../commons/src/dbg.h"
+
 #include "app_connection.h"
 
 AppConnection_create_not_ready(int socket){
@@ -114,8 +117,60 @@ Queue *AppConnection_next_packages(AppConnection *connection){
 }
 
 int AppConnection_receive_package(AppConnection *connection, MIPTPPackage *package){
-    
+    check(connection != NULL, "Invalid argument, connection is NULL");
+    check(package != NULL, "Invalid argument, package is NULL");
+    int rc = 0;
+
+    switch (connection->status)
+    {
+    case CONN_SENDER:
+        rc = MIPTPSendJob_receive_package(connection->s_job, package);
+        check(rc != -1, "MIPTPSendJob failed to receive package");
+        if(MIPTPSendJob_is_complete(connection->s_job)) connection->status = CONN_COMPLETE;
+        break;
+    case CONN_RECEIVER:
+        rc = MIPTPReceiveJob_receive_package(connection->r_job, package);
+        check(rc != -1, "MIPTPSendJob failed to receive package");
+        if(MIPTPReceiveJob_is_complete(connection->r_job)) connection->status = CONN_COMPLETE;
+        break;
+    default:
+        log_warn("Tried to receive package on connection with status: %d - ignoring", connection->status);
+        break;
+    }
+
+    return 1;
+
+    error:
+        return -1;
 }
 
 // AppConnectionStatus must be complete else a NULL pointer will be returned
-ClientPackage *AppConnection_complete_response(AppConnection *connection);
+ClientPackage *AppConnection_result(AppConnection *connection){
+    check(connection != NULL, "Invalid argument, connection is NULL");
+    check(connection->status == CONN_SENDER || connection->status == CONN_RECEIVER, "Invalid argument, connection is not a valid status: %d", connection->status);
+    int rc = 0;
+    ClientPackage *c_package = NULL;
+
+    switch (connection->status)
+    {
+    case CONN_SENDER:
+        check(MIPTPSendJob_is_complete(connection->s_job), "Called complete_response on a not complete job");
+        c_package = MIPTPSendJob_result(connection->s_job);
+        break;
+    case CONN_RECEIVER:
+        check(MIPTPReceiveJob_is_complete(connection->r_job), "Called complete_response on a not complete job");
+        c_package = MIPTPReceiveJob_result(connection->r_job);
+        break;
+    default:
+        log_err("Tried to create complete response on connection with status: %d - ignoring", connection->status);
+        goto error;
+        break;
+    }
+
+    check(c_package != NULL, "Job result is NULL");
+    return c_package;
+
+    error:
+        return NULL;
+    
+}
