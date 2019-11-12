@@ -6,7 +6,7 @@
 
 #include "miptp_send_job.h"
 
-MIPTPSendJob *MIPTPSendJob_create(uint16_t port, BYTE *data, uint16_t data_size, unsigned long timeout){
+MIPTPSendJob *MIPTPSendJob_create(uint16_t port, MIP_ADDRESS destination, BYTE *data, uint16_t data_size, unsigned long timeout){
     MIPTPSendJob *job = calloc(1, sizeof(MIPTPSendJob));
     check_mem(job);
 
@@ -14,6 +14,7 @@ MIPTPSendJob *MIPTPSendJob_create(uint16_t port, BYTE *data, uint16_t data_size,
     job->port = port;
     job->timeout = timeout;
     job->data_size = data_size;
+    job->destination = destination;
     job->data = calloc(job->data_size, sizeof(BYTE));
     check_mem(job->data);
 
@@ -89,8 +90,21 @@ int MIPTPSendJob_receive_package(MIPTPSendJob *job, MIPTPPackage *package){
     return 1;
 }
 
+ClientPackage *MIPTPSendJob_result(MIPTPSendJob* job){
+    check(MIPTPSendJob_is_complete(job), "Invalid state, MIPTPSendJob is not complete");
 
-int MIPTPSendJob_finished(MIPTPSendJob *job){
+    ClientPackage *result = ClientPackage_create(job->port, job->destination, MIPTP_RECEIVER,"OK", sizeof("OK"));
+    check(result != NULL, "Failed to create ClientPackage");
+
+    return result;
+
+    error:
+        return NULL;
+}
+
+
+// returns 1 of the job is complete, 0 if it is still active
+int MIPTPSendJob_is_complete(MIPTPSendJob *job) {
     unsigned int num_packages = job->data_size / MAX_DATA_BATCH_SIZE_BYTES;
     if(job->data_size % MAX_DATA_BATCH_SIZE_BYTES) num_packages++;
     
@@ -98,4 +112,11 @@ int MIPTPSendJob_finished(MIPTPSendJob *job){
     return job->sliding_window.sequence_base >= (num_packages - 1);
 }
 
+
+
+// Returns 1 if the job is timed out, 0 if it is still active
+int MIPTPSendJob_is_timed_out(MIPTPSendJob *job){
+    unsigned long current_milli = get_now_milli();
+    return (current_milli - job->last_ack) > job->timeout;
+}
 

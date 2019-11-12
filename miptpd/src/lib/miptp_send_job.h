@@ -14,6 +14,7 @@
 typedef struct MIPTPSendJob
 {
     uint16_t port: 14;
+    MIP_ADDRESS destination;
     unsigned long timeout;
     unsigned long last_ack;
     BYTE *data;
@@ -22,7 +23,7 @@ typedef struct MIPTPSendJob
 } MIPTPSendJob;
 
 
-MIPTPSendJob *MIPTPSendJob_create(uint16_t port, BYTE *data, uint16_t data_size, unsigned long timeout);
+MIPTPSendJob *MIPTPSendJob_create(uint16_t port, MIP_ADDRESS destination, BYTE *data, uint16_t data_size, unsigned long timeout);
 
 void MIPTPSendJob_destroy(MIPTPSendJob *job);
 
@@ -31,6 +32,8 @@ Queue *MIPTPSendJob_next_packages(MIPTPSendJob *job);
 MIPTPPackage *MIPTPSendJob_next_package(MIPTPSendJob *job, uint16_t sequence_nr);
 
 int MIPTPSendJob_receive_package(MIPTPSendJob *job, MIPTPPackage *package);
+
+ClientPackage *MIPTPSendJob_result(MIPTPSendJob*job);
 
 // returns 1 of the job is complete, 0 if it is still active
 int MIPTPSendJob_is_complete(MIPTPSendJob *job);
