@@ -17,6 +17,8 @@
 #include "../../commons/src/polling.h"
 #include "../../commons/src/dbg.h"
 #include "../../commons/src/application.h"
+#include "../../commons/src/mipd_message.h"
+#include "../../commons/src/definitions.h"
 
 
 
@@ -38,8 +40,12 @@ Send the provided message and waits for answere for 1 second using epoll beforin
 int main(int argc, char *argv[]){
 
     int rc = 0;
-    struct ping_message *p_message = calloc(1, sizeof(struct ping_message));
-    ApplicationMessage *p_response = calloc(1, sizeof(ApplicationMessage));
+    MIPDMessage *message =  NULL;
+    MIPDMessage *response =  NULL;
+    BYTE buffer[MAX_MIPMESSAGE_DATA_SIZE];
+    BYTE s_message[MAX_MIPMESSAGE_SIZE];
+    BYTE s_response[MAX_MIPMESSAGE_SIZE];
+    uint16_t s_message_size = 0;
 
     int so = 0;
 
@@ -54,10 +60,15 @@ int main(int argc, char *argv[]){
     }
     check(argc == 4, "ping_client [-h] <destination_host> <message> <socket_application>");
 
-
-    rc = sscanf(argv[1], "%" SCNu8 ,  &p_message->dst_mip_addr);
+    MIP_ADDRESS destination = 0;
+    rc = sscanf(argv[1], "%" SCNu8 ,  &destination);
     check(rc != -1, "[PING CLIENT] Failed to parse mip address arg");
-    strcpy(p_message->content, argv[2]);
+    strcpy(&buffer, argv[2]);
+
+    message = MIPDMessage_create(destination, strlen(&buffer), &buffer);
+    s_message_size = MIPDMessage_serialize(&s_message, message);
+    check(s_message_size != -1, "Failed to serialise MIPDMessage");
+
 
     struct sockaddr_un so_name;
   
@@ -82,32 +93,37 @@ int main(int argc, char *argv[]){
 
     rc = connect(so, (const struct sockaddr*)&so_name, sizeof(struct sockaddr_un));
     check(rc != -1, "[PING CLIENT] Failed to connect to domain socket: %s",so_name.sun_path);
-    printf("[PING CLIENT]  ping message:\ndst:%d\tcontent:%s\n", p_message->dst_mip_addr, p_message->content);
+    printf("[PING CLIENT]  ping message:\ndst:%d\tcontent:%s\n", message->mip_address, message->data);
 
  
     // Write to mipd 
     long before = get_milli();
-    rc = write(so, p_message, sizeof(struct ping_message));
+    rc = send(so, &s_message, s_message_size, 0);
+    check(rc != -1, "Failed to send message to mipd");
 
-    rc = recv(so, p_response, sizeof(struct ping_message), 0);
+    rc = recv(so, &s_response, MAX_MIPMESSAGE_SIZE, 0);
     long after = get_milli();
+
+
 
     if(rc == -1 && errno == EAGAIN){
         printf("[PING CLIENT] Timeout\t time elapsed: %ld\n",after - before);
     }else {
         check(rc != -1, "Failed to read response from mipd");
-        printf("[PING CLIENT] received from mipd: %d\tmessage: %s\n", p_response->mip_src, p_response->message.content);
+        
+        response = MIPDMessage_deserialize(&s_response);
+        printf("[PING CLIENT] received from mipd: %d\tmessage: %s\n", response->mip_address, response->data);
         printf("[PING CLIENT] time elapsed: %ld\n", after - before);
     }
 
-    free(p_message);
-    free(p_response);
+    MIPDMessage_destroy(message);
+    MIPDMessage_destroy(response);
     if(so)close(so);
     return 0;
 
     error:
-        free(p_response);
-        free(p_message);
+        MIPDMessage_destroy(message);
+        MIPDMessage_destroy(response);
         if(so) close(so);
         return -1;
 }

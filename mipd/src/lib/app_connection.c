@@ -11,6 +11,7 @@
 
 #include "../../../commons/src/dbg.h"
 #include "../../../commons/src/application.h"
+#include "../../../commons/src/mipd_message.h"
 #include "app_connection.h"
 
 #include "packaging/mip_package.h"
@@ -159,14 +160,18 @@ int read_from_domain_socket(int socket_fd, BYTE *buffer, size_t buffer_size){
         return -1;
 }
 
-// Returns a empty MIPPackage with the provided ping_message to be added to queue
-MIPPackage *create_queueable_ping_message_MIPPackage(struct ping_message *message){
+// Returns a empty MIPPackage with the provided MIPDMessage to be added to queue
+MIPPackage *create_queueable_MIPDMessage_MIPPackage(MIPDMessage *message){
+    check(message != NULL, "Invalid arguemnt, message is NULL");
+
     BYTE default_mac[] = {0, 0, 0, 0, 0, 0};
     MIPPackage *m_package = NULL;
 
     // Create MIP packet
-    m_package = MIPPackage_create_raw(255, &default_mac, message->dst_mip_addr, &default_mac, message, sizeof(struct ping_message), 3);
+    m_package = MIPPackage_create_raw(255, &default_mac, message->mip_address, &default_mac, message->data, message->data_size, 3);
     check(m_package != NULL, "Failed to create MIPPackage");
+
+    MIPDMessage_destroy(message);
 
     return m_package;
 
@@ -182,15 +187,15 @@ int handle_MIPPackage_for_application(MIPDServer *server, MIPPackage *received_p
         return 0;
     }
     int rc = 0;
-    ApplicationMessage *app_message = calloc(1, sizeof(ApplicationMessage));
+    MIPDMessage *message = MIPDMessage_create(received_package->m_header.src_addr, received_package->message, received_package->m_header.payload_len * 4); // TODO does this work?
+    BYTE *s_message[MAX_MIPMESSAGE_SIZE];
+    rc = MIPDMessage_serialize(&s_message, message);
+    check(rc != -1, "Failed to serialize MIPDMessage");
 
-    app_message->mip_src = received_package->m_header.src_addr; 
-    memcpy(&app_message->message, received_package->message, sizeof(struct ping_message));
-
-    rc = write(server->app_socket->connected_socket_fd, app_message, sizeof(ApplicationMessage));
-    ApplicationMessage_destroy(app_message);
+    rc = send(server->app_socket->connected_socket_fd, s_message, rc, 0);
+    MIPDMessage_destroy(message);
     check(rc != -1, "Failed to write received message to domain socket: %d", server->app_socket->connected_socket_fd);
-
+    
     return 1;
 
     error:

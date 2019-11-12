@@ -11,6 +11,8 @@
 #include "../../../commons/src/polling.h"
 #include "../../../commons/src/dbg.h"
 #include "../../../commons/src/application.h"
+#include "../../../commons/src/definitions.h"
+#include "../../../commons/src/mipd_message.h"
 #include "app_connection.h"
 #include "link.h"
 #include "mip_arp.h"
@@ -146,15 +148,15 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
 }
 
 // Handle a request to send a message on the domain socket, returns 1 on success, 0 on non critical error and -1 on critical error
-int handle_domain_socket_request(MIPDServer *server, struct ping_message *p_message){
+int handle_domain_socket_request(MIPDServer *server, MIPDMessage *message){
     int rc = 0;
     struct mip_header *m_header = NULL;
     struct ether_frame *e_frame = NULL;
     MIPPackage *m_packet = NULL;
 
-    int sock = query_mip_address_src_socket(server->cache, p_message->dst_mip_addr);
+    int sock = query_mip_address_src_socket(server->cache, message->mip_address);
     if(sock == -1){
-        MIPDServer_log(server, "could not lockate mip address: %d in cache", p_message->dst_mip_addr);
+        MIPDServer_log(server, "could not lockate mip address: %d in cache", message->mip_address);
         return 0;
     }
 
@@ -165,29 +167,29 @@ int handle_domain_socket_request(MIPDServer *server, struct ping_message *p_mess
     uint8_t src_mip_addr = server->i_table->interfaces[i_pos].mip_address;
 
     struct sockaddr_ll *sock_name = server->i_table->interfaces[i_pos].so_name;
-    int cache_pos = query_mip_address_pos(server->cache, p_message->dst_mip_addr);
+    int cache_pos = query_mip_address_pos(server->cache, message->mip_address);
     check(cache_pos != -1, "Could not locate cache pos");
 
 
     // Create headers for the message
     e_frame = create_ethernet_frame(server->cache->entries[cache_pos].dst_interface, sock_name);
-    m_header = create_transport_mip_header(src_mip_addr, p_message->dst_mip_addr);
+    m_header = create_transport_mip_header(src_mip_addr, message->mip_address);
 
     // Create MIP packet
-    m_packet = MIPPackage_create(e_frame, m_header, p_message, sizeof(p_message));
+    m_packet = MIPPackage_create(e_frame, m_header, message->data, message->data_size);
 
     // Send the message
     rc = sendto_raw_mip_package(sock, sock_name, m_packet);
     check(rc != -1, "Failed to send transport packet");
     MIPDServer_log(server, " Domain message sent");
 
-    free(p_message);
+    MIPDMessage_destroy(message);
     free(e_frame);
     free(m_header);
     return 0;
 
     error:
-        if(p_message)free(p_message);
+        if(message) MIPDMessage_destroy(message);
         if(e_frame)free(e_frame);
         if(m_header)free(m_header);
         return -1;
@@ -197,12 +199,12 @@ int handle_domain_socket_request(MIPDServer *server, struct ping_message *p_mess
 /*
 Main server function. Starts the server loop and contains the entry for branching into different event handlers
 */
-int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events, int event_num, int read_buffer_size, int timeout) {
+int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events, int event_num, int timeout) {
     int rc = 0;
     int running = 1;
     int event_count = 0;
     size_t bytes_read = 0;
-    char read_buffer[read_buffer_size + 1];
+    BYTE read_buffer[MAX_MIPMESSAGE_SIZE];
 
     rc = complete_mip_arp(server->i_table, server->cache);
     check(rc != -1, "Failed to complete mip arp");
@@ -214,7 +216,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
         event_count = epoll_wait(epoll_fd, events, event_num, timeout);
         int i = 0;
         for(i = 0; i < event_count; i++){
-            memset(read_buffer, '\0', read_buffer_size + 1);
+            memset(read_buffer, '\0', MAX_MIPMESSAGE_SIZE);
 
             // Event on the listening local domain socket, should only be for new connections
             if(events[i].data.fd == server->app_socket->listening_socket_fd){
@@ -298,23 +300,23 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
             // Application socket event
             else if(events[i].data.fd == server->app_socket->connected_socket_fd){
                 MIPDServer_log(server, "application socket event");
-                bytes_read = read(events[i].data.fd, read_buffer, read_buffer_size);
+                bytes_read = recv(events[i].data.fd, read_buffer, MAX_MIPMESSAGE_DATA_SIZE, 0);
 
                 if(bytes_read == 0 || bytes_read == -1){
                     handle_domain_socket_disconnect(server, &events[i]);
                     server->app_socket->connected_socket_fd = -1;
                 } else {
                     // Parse message on domain socket
-                    struct ping_message *p_message = parse_ping_request(read_buffer);
-                    MIPDServer_log(server, "ping message - dst:%d\tcontent:%s", p_message->dst_mip_addr, p_message->content);
+                    MIPDMessage *message = MIPDMessage_deserialize(read_buffer);
+                    MIPDServer_log(server, "ping message - dst:%d\tcontent:%s", message->mip_address, message->data);
 
-                    rc = handle_domain_socket_request(server, p_message);
+                    rc = handle_domain_socket_request(server, message);
                     check(rc != -1, "Failed to handle domain socket event");
                     if(rc == 0){
                         // MIP address is not a neighbor
-                        MIPPackage *ping_message_package = create_queueable_ping_message_MIPPackage(p_message);
-                        check(ping_message_package != NULL, "Failed to create ping message MIPPackage");
-                        rc = request_forwarding(server, p_message->dst_mip_addr, ping_message_package);
+                        MIPPackage *message_package = create_queueable_MIPDMessage_MIPPackage(message);
+                        check(message_package != NULL, "Failed to create ping message MIPPackage");
+                        rc = request_forwarding(server, message->mip_address, message_package);
                         check(rc != -1, "Failed to request forwarding, routerd might not be connected")
                     }
                 }
@@ -323,7 +325,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
 
             // stdin event
             else if(events[i].data.fd == 0){
-                bytes_read = read(events[i].data.fd, read_buffer, read_buffer_size);
+                bytes_read = read(events[i].data.fd, read_buffer, MAX_MIPMESSAGE_SIZE);
                 
                 if(!strncmp(read_buffer, "stop\n", 5)){
                     running = 0;

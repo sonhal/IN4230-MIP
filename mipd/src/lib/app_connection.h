@@ -14,6 +14,8 @@
 #include <linux/if_packet.h>
 #include <net/ethernet.h> /* the L2 protocols */
 
+#include "../../../commons/src/mipd_message.h"
+
 #include "packaging/mip_package.h"
 #include "server.h"
 
@@ -33,7 +35,7 @@ struct ping_message *parse_ping_request(BYTE *buffer);
 
 int read_from_domain_socket(int socket_fd, BYTE *buffer, size_t buffer_size);
 
-MIPPackage *create_queueable_ping_message_MIPPackage(struct ping_message *message);
+MIPPackage *create_queueable_MIPDMessage_MIPPackage(MIPDMessage *message);
 
 int handle_MIPPackage_for_application(MIPDServer *server, MIPPackage *received_package);
 

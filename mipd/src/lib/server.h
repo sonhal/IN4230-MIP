@@ -43,6 +43,6 @@ void MIPDServer_destroy(MIPDServer *self);
 
 MIPDServer *MIPDServer_create(LocalSocket *app_socket, LocalSocket *route_socket, LocalSocket *forward_socket, struct interface_table *table, int debug_enabled, long cache_update_freq_milli);
 
-int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events, int event_num, int read_buffer_size, int timeout);
+int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events, int event_num, int timeout);
 
 #endif

@@ -113,7 +113,7 @@ int main(int argc, char *argv[]){
 
     MIPDServer *server = MIPDServer_create(app_socket, route_socket, forward_socket, i_table, u_config->is_debug, CACHE_UPDATE_FREQ_MILLI);
     // MAIN application loop
-    rc = MIPDServer_run(server, epoll_fd, events, MAX_EVENTS, MAX_READ, 10000);
+    rc = MIPDServer_run(server, epoll_fd, events, MAX_EVENTS, 10000);
     check(rc != -1, "epoll loop exited unexpectedly");
 
     clean_up(i_table, epoll_fd, &so_name, raw_socket, u_config, events);
