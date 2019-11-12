@@ -22,6 +22,7 @@ typedef struct AppConnection
 {
     uint16_t port: 14;
     int socket;
+    MIP_ADDRESS connected_mip;
     enum AppConnectionStatus status;
     MIPTPSendJob *s_job;
     MIPTPReceiveJob *r_job;
@@ -31,7 +32,7 @@ typedef struct AppConnection
 AppConnection_create(enum AppConnectionStatus status,
                     int socket,
                     uint16_t port,
-                    MIP_ADDRESS destination,
+                    MIP_ADDRESS connected_mip,
                     BYTE *data,
                     uint16_t data_size,
                     unsigned long timeout);
@@ -46,7 +47,7 @@ void AppConnection_close_destroy(AppConnection *connection);
 
 Queue *AppConnection_next_packages(AppConnection *connection);
 
-int AppConnection_receive_package(AppConnection *connection, MIPTPPackage *package);
+int AppConnection_receive_package(AppConnection *connection, MIP_ADDRESS sender, MIPTPPackage *package);
 
 // AppConnectionStatus must be complete else a NULL pointer will be returned
 ClientPackage *AppConnection_result(AppConnection *connection);

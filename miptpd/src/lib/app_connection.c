@@ -55,6 +55,7 @@ AppConnection_create(enum AppConnectionStatus status,
 
     connection->socket = socket;
     connection->port = port;
+    connection->connected_mip;
     connection->status = status;
     connection->r_job = NULL;
     connection->s_job = NULL;
@@ -64,7 +65,7 @@ AppConnection_create(enum AppConnectionStatus status,
     switch (connection->status)
     {
     case CONN_SENDER:
-        connection->s_job = MIPTPSendJob_create(connection->port, data, data_size, timeout);
+        connection->s_job = MIPTPSendJob_create(connection->port, connection->connected_mip, data, data_size, timeout);
         check(connection->s_job != NULL, "Failed to set the MIPTPSendJob");
         break;
     case CONN_RECEIVER:
@@ -116,7 +117,7 @@ Queue *AppConnection_next_packages(AppConnection *connection){
         return NULL;
 }
 
-int AppConnection_receive_package(AppConnection *connection, MIPTPPackage *package){
+int AppConnection_receive_package(AppConnection *connection, MIP_ADDRESS sender, MIPTPPackage *package){
     check(connection != NULL, "Invalid argument, connection is NULL");
     check(package != NULL, "Invalid argument, package is NULL");
     int rc = 0;
@@ -129,7 +130,7 @@ int AppConnection_receive_package(AppConnection *connection, MIPTPPackage *packa
         if(MIPTPSendJob_is_complete(connection->s_job)) connection->status = CONN_COMPLETE;
         break;
     case CONN_RECEIVER:
-        rc = MIPTPReceiveJob_receive_package(connection->r_job, package);
+        rc = MIPTPReceiveJob_receive_package(connection->r_job, sender, package);
         check(rc != -1, "MIPTPSendJob failed to receive package");
         if(MIPTPReceiveJob_is_complete(connection->r_job)) connection->status = CONN_COMPLETE;
         break;
