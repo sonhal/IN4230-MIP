@@ -187,7 +187,8 @@ int handle_MIPPackage_for_application(MIPDServer *server, MIPPackage *received_p
     }
     int rc = 0;
     BYTE s_message[MAX_MIPMESSAGE_SIZE];
-    MIPDMessage *message = MIPDMessage_create(received_package->m_header.src_addr, received_package->message, received_package->m_header.payload_len * 4); // TODO does this work?
+    MIPDMessage *message = MIPDMessage_create(received_package->m_header.src_addr, received_package->m_header.payload_len * 4, received_package->message); // TODO does this work?
+    check(message != NULL, "Failed to create MIPDMessage")
     rc = MIPDMessage_serialize(&s_message, message);
     check(rc != -1, "Failed to serialize MIPDMessage");
 
