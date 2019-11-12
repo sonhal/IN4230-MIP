@@ -11,8 +11,8 @@
 #include <sys/un.h>		/* struct sockaddr_un */
 #include <sys/epoll.h> 
 
+#include "../../commons/src/mipd_message.h"
 #include "../../commons/src/polling.h"
-#include "../../commons/src/application.h"
 #include "../../commons/src/dbg.h"
 
 
@@ -36,6 +36,8 @@ int main(int argc, char *argv[]){
     int rc = 0;
     int so = 0;
     struct sockaddr_un so_name;
+    BYTE m_buffer[MAX_MIPMESSAGE_SIZE];
+    BYTE r_buffer[MAX_MIPMESSAGE_SIZE];
   
     /* Create socket */
     so = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -56,23 +58,31 @@ int main(int argc, char *argv[]){
     log_info("Ping server up and polling");
     while (1)
     {
-         ApplicationMessage *request = calloc(1, sizeof(ApplicationMessage));
-        check_mem(request);
-        rc = recv(so, request, sizeof(ApplicationMessage), 0);
+        
+        rc = recv(so, &m_buffer, MAX_MIPMESSAGE_SIZE, 0);
         check(rc != -1, "Failed to read response from mipd");
         check(rc != 0, "mipd disconnected");
-        log_info("RECEIVED message\tMIP src: %d\tmessage: %s\n", request->mip_src, request->message.content);
+        MIPDMessage *message = MIPDMessage_deserialize(&m_buffer);
 
-        struct ping_message *response = calloc(1, sizeof(struct ping_message));
-        char *message = "PONG";
-        strncpy(response->content, message, 31);
-        response->dst_mip_addr = request->mip_src;
+        log_info("RECEIVED message\tMIP src: %d\tmessage: %s\n", message->mip_address, message->data);
 
-        log_info("Sending to mip addr: %d", response->dst_mip_addr);
-        rc = write(so, response, sizeof(struct ping_message));
+        
+        char *payload = "PONG";
+        MIPDMessage *response = MIPDMessage_create(message->mip_address, strlen(payload), payload);
+
+        log_info("Sending to mip addr: %d", response->mip_address);
+
+        rc =MIPDMessage_serialize(&r_buffer, response);
+        check(rc != -1, "Failed to serialize MIPDMessage");
+
+        rc = write(so, &r_buffer, rc);
         check(rc != -1, "Failed to write to mipd");
-        free(request);
-        free(response);
+
+        // Clean up
+        MIPDMessage_destroy(message);
+        MIPDMessage_destroy(response);
+        memset(m_buffer, 0, MAX_MIPMESSAGE_SIZE);
+        memset(r_buffer, 0, MAX_MIPMESSAGE_SIZE);
     }
 
     close(so);
