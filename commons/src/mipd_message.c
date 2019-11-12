@@ -43,6 +43,7 @@ int MIPDMessage_serialize(BYTE *buffer, MIPDMessage *message) {
     check(buffer != NULL, "Invalid argument, buffer is NULL");
     check(message != NULL, "Invalid argument, message is NULL");
     uint16_t serialized_message_size = calc_serialized_message_size(message);
+    check(serialized_message_size <= MAX_MIPMESSAGE_SIZE, "serialized message is to large");
 
     uint16_t offset = sizeof(message->mip_address);
 
@@ -55,13 +56,14 @@ int MIPDMessage_serialize(BYTE *buffer, MIPDMessage *message) {
 
     error:
         log_err("Failed to serialize package in MIPDMessage_serialize");
-        return NULL;
+        return -1;
 }
 
 
 calc_serialized_message_size(MIPDMessage *message){
     uint16_t result = 0;
-    result += sizeof(MIPDMessage) - sizeof(message->data);
+    result += sizeof(MIP_ADDRESS);
+    result += sizeof(uint16_t);
     result += message->data_size;
     return result;
 }
