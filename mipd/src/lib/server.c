@@ -147,8 +147,12 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
         return -1;
 }
 
+// Tries not send message to a direct neighbor if it is located in the cache
 // Does not free message
-// Handle a request to send a message on the domain socket, returns 1 on success, 0 on non critical error and -1 on critical error
+// Handle a request to send a message on the domain socket
+// Returns 1 on success, the message was sent to a direct mipd neighbor
+// Returns 0 if mip address could not be found amongst direct neighbors
+// Returns -1 on critical error
 int handle_domain_socket_request(MIPDServer *server, MIPDMessage *message){
     int rc = 0;
     struct mip_header *m_header = NULL;
@@ -186,7 +190,7 @@ int handle_domain_socket_request(MIPDServer *server, MIPDMessage *message){
 
     free(e_frame);
     free(m_header);
-    return 0;
+    return 1;
 
     error:
         if(e_frame)free(e_frame);
