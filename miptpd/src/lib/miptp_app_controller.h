@@ -6,6 +6,7 @@
 #include "../../../commons/src/list.h"
 #include "../../../commons/src/definitions.h"
 #include "../../../commons/src/client_package.h"
+#include "../../../commons/src/mipd_message.h"
 
 #include "miptp_send_job.h"
 #include "miptp_receive_job.h"
@@ -27,7 +28,7 @@ void MIPTPAppController_destroy(MIPTPAppController *app_controller);
 returns 1 if it successful, -1 if it fails to handle the package */
 int MIPTPAppController_handle_app_package(MIPTPAppController *controller, int socket, BYTE *s_package);
 
-int MIPTPAppController_handle_mipd_package(MIPTPAppController *app_controller, int mipd_socket, BYTE *s_package);
+int MIPTPAppController_handle_mipd_package(MIPTPAppController *app_controller, int mipd_socket, MIPDMessage *message);
 
 int MIPTPAppController_handle_connection(MIPTPAppController *app_controller, int epoll_fd, struct epoll_event *event);
 

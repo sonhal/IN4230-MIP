@@ -6,6 +6,7 @@
 #include "../../../commons/src/dbg.h"
 #include "../../../commons/src/polling.h"
 #include "../../../commons/src/client_package.h"
+#include "../../../commons/src/mipd_message.h"
 
 #include "app_connection.h"
 #include "miptp_app_controller.h"
@@ -74,13 +75,13 @@ int MIPTPAppController_handle_app_package(MIPTPAppController *controller, int so
 
 
 
-int MIPTPAppController_handle_mipd_package(MIPTPAppController *app_controller, int mipd_socket, BYTE *s_package){
-    int rc = 0;
-
+int MIPTPAppController_handle_mipd_package(MIPTPAppController *app_controller, int mipd_socket, MIPDMessage *message){
     check(app_controller != NULL, "Bad argument, app_controller is NULL");
-    check(s_package != NULL, "Bad argument, s_package is NULL");
-    MIPTPPackage *package = ClientPackage_deserialize(s_package);
-    check(package != NULL, "Failed to deserialize MIPTPPackage from mipd");
+    check(message != NULL, "Bad argument, MIPDMessage message is NULL");
+    int rc = 0;
+    MIPTPPackage *package = NULL;
+    package = MIPTPPackage_deserialize(message->data);
+    check(package != NULL, "Failed to deserialize MIPTPPackage");
 
     LIST_FOREACH(app_controller->connections, first, next, cur){
         AppConnection *connection = (AppConnection *)cur->value;
@@ -88,7 +89,7 @@ int MIPTPAppController_handle_mipd_package(MIPTPAppController *app_controller, i
 
         if(connection->port == package->miptp_header.port){
 
-            rc = AppConnection_receive_package(connection, package);
+            rc = AppConnection_receive_package(connection, message->mip_address, package);
             check(rc != -1, "AppConnection failed to receive package");
         }
     } 
@@ -182,7 +183,7 @@ int MIPTPAppController_handle_outgoing(MIPTPAppController *controller){
             MIPTPPackage *package = (MIPTPPackage *)q_cur->value;
             check(package != NULL, "Invalid state, MIPTPPackage is NULL");
 
-            rc = MIPTPAppController_send(controller, controller->mipd_socket, package);
+            rc = MIPTPAppController_send_MIPTPPackage(controller, controller->mipd_socket, package);
             check(rc != -1, "Failed to send package(seqnr: %d, port: %d) to mipd", package->miptp_header.PSN, package->miptp_header.port);
         }
         Queue_destroy(next_packages);
