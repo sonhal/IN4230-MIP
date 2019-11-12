@@ -7,7 +7,11 @@
 
 
 MIPTPPackage *MIPTPPackage_create(uint16_t port, uint16_t PSN, BYTE *data, uint16_t data_size){
+    check(data_size <= MAX_MIPTP_PACKAGE_DATA_SIZE, "data_size is to large");
+
     MIPTPPackage *package = calloc(1, sizeof(MIPTPPackage));
+    check_mem(package);
+
     package->miptp_header.PL = calc_pl(data_size);
     package->miptp_header.port = port;
     package->miptp_header.PSN = PSN;
@@ -54,10 +58,11 @@ void MIPTPPackage_destroy(MIPTPPackage *package){
 // Serializes the contents of the MIPTPPackage into the buffer
 // On success returns the byte size of the serialized package
 // Returns -1 on failure
-size_t MIPTPPackage_serialize(BYTE *buffer, MIPTPPackage *package){
+uint16_t MIPTPPackage_serialize(BYTE *buffer, MIPTPPackage *package){
     // Size of MIPTPPackage minus the data pointer
-    size_t package_size = sizeof(MIPTPPackage) - sizeof(BYTE *);
+    uint16_t package_size = sizeof(MIPTPHeader);
     package_size += package->data_size;
+    check(package_size <= MAX_MIPTP_PACKAGE_SIZE, "deserialized package size is to large");
 
     memcpy(buffer, &package->miptp_header, sizeof(MIPTPHeader));
     memcpy(&buffer[sizeof(MIPTPHeader)], &package->data_size, sizeof(uint16_t));
@@ -70,16 +75,16 @@ size_t MIPTPPackage_serialize(BYTE *buffer, MIPTPPackage *package){
         return -1;
 }
 
-MIPTPPackage *MIPTPPackage_deserialize(BYTE *s_package){
+MIPTPPackage *MIPTPPackage_deserialize(BYTE *s_package, uint16_t package_size){
 
-    uint16_t data_size = 0;
     MIPTPHeader header = {};
+    uint16_t size_of_header = sizeof(MIPTPHeader);
+    uint16_t data_size = package_size - size_of_header;
 
-    MIPTPPackage_serialized_get_data_size(s_package, &data_size);
     BYTE *data = calloc(data_size, sizeof(BYTE));
     check_mem(data);
 
-    MIPTPPackage_serialized_get_data(s_package, data);
+    MIPTPPackage_serialized_get_data(s_package, data, data_size);
     MIPTPPackage_serialized_get_header(s_package, &header);
 
     MIPTPPackage *package = MIPTPPackage_create_raw(header.PL, header.port, header.PSN, data, data_size);
@@ -95,14 +100,9 @@ MIPTPPackage *MIPTPPackage_deserialize(BYTE *s_package){
 MIPTPPackage_serialized_get_header(BYTE *s_package, MIPTPHeader *header){
     memcpy(header, s_package, sizeof(MIPTPHeader));
 }
-MIPTPPackage_serialized_get_data_size(BYTE *s_package, uint16_t *data_size){
-    memcpy(data_size, &s_package[sizeof(MIPTPHeader)], sizeof(uint16_t));
-}
-MIPTPPackage_serialized_get_data(BYTE *s_package, BYTE *data){
-    uint16_t data_size = 0;
-    MIPTPPackage_serialized_get_data_size(s_package, &data_size);
 
-    memcpy(data, &s_package[sizeof(MIPTPHeader) + sizeof(uint16_t)], data_size);
+MIPTPPackage_serialized_get_data(BYTE *s_package, BYTE *data, uint16_t data_size){
+    memcpy(data, &s_package[sizeof(MIPTPHeader)], data_size);
 }
 
 uint8_t calc_pl(uint16_t data_size){

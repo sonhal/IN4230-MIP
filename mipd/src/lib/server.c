@@ -220,6 +220,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
         int i = 0;
         for(i = 0; i < event_count; i++){
             memset(read_buffer, '\0', MAX_MIPMESSAGE_SIZE);
+            bytes_read = 0;
 
             // Event on the listening local domain socket, should only be for new connections
             if(events[i].data.fd == server->app_socket->listening_socket_fd){
@@ -302,25 +303,34 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
 
             // Application socket event
             else if(events[i].data.fd == server->app_socket->connected_socket_fd){
+                MIPDMessage *message = NULL;
+                MIPPackage *message_package = NULL;
                 MIPDServer_log(server, "application socket event");
                 bytes_read = recv(events[i].data.fd, read_buffer, MAX_MIPMESSAGE_DATA_SIZE, 0);
 
                 if(bytes_read == 0 || bytes_read == -1){
                     handle_domain_socket_disconnect(server, &events[i]);
                     server->app_socket->connected_socket_fd = -1;
+                } else if(bytes_read < sizeof(MIPDMessage)){
+                    log_warn("Received invalid or corrupted message from connected application");
                 } else {
                     // Parse message on domain socket
-                    MIPDMessage *message = MIPDMessage_deserialize(read_buffer);
-                    MIPDServer_log(server, "ping message - dst:%d\tsize: %d\tcontent:%s", message->mip_address, message->data_size, message->data);
+                    printf("bytes read: %d\n", bytes_read);
+                    message = MIPDMessage_deserialize(read_buffer);
+                    MIPDServer_log(server, "application message - dst:%d\tsize: %d", message->mip_address, message->data_size);
 
                     rc = handle_domain_socket_request(server, message);
                     check(rc != -1, "Failed to handle domain socket event");
                     if(rc == 0){
                         // MIP address is not a neighbor
-                        MIPPackage *message_package = create_queueable_MIPDMessage_MIPPackage(message);
+                        message_package = create_queueable_MIPDMessage_MIPPackage(message);
                         check(message_package != NULL, "Failed to create ping message MIPPackage");
                         rc = request_forwarding(server, message_package->m_header.dst_addr, message_package);
-                        check(rc != -1, "Failed to request forwarding, routerd might not be connected")
+                        check(rc != -1, "Failed to request forwarding");
+                        if(rc == 0){
+                            // No palce to send package, drop it
+                            MIPPackage_destroy(message_package);
+                        }
                     }
                     // Clean up message as it has been send to neighbor or the data has been safe copied
                     MIPDMessage_destroy(message);

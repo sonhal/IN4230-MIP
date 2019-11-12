@@ -116,11 +116,17 @@ int handle_forward_response(MIPDServer *server, MIP_ADDRESS next_hop){
         return -1;
 }
 
+// Returns 1 on successfull request
+// Returns 0 if it could not send the request to a router daemon
+// Returns -1 on Failure to queue the package
 int request_forwarding(MIPDServer *server, MIP_ADDRESS destination, MIPPackage *package){
     int rc = 0;
 
     rc = write(server->forward_socket->connected_socket_fd, &destination, sizeof(MIP_ADDRESS));
-    check(rc != -1, "Failed to send forward request(destionation=%d) to local routerd", destination);
+    if(rc == -1){
+        log_warn("Failed to send forward request(destionation=%d) to local routerd, might not be connected", destination);
+        return 0;
+    } 
 
     rc = ForwardQueue_push(server->forward_queue, package);
     check(rc != -1, "Failed to add forward request(destionation=%d) to forward queue", destination);

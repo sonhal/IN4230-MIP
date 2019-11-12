@@ -22,6 +22,7 @@ MIPTPAppController *MIPTPAppController_create(int mipd_socket, unsigned int max_
 
     error:
         log_err("Failed to create MIPTPAppController in MIPTPAppController_create");
+        MIPTPAppController_destroy(controller);
         return NULL;
 }
 
@@ -44,13 +45,15 @@ int MIPTPAppController_handle_app_package(MIPTPAppController *controller, int so
     check(package->destination > 0, "Invalid destination");
     check(package->data != NULL, "Invalid data pointer, NULL");
 
+    AppConnection *complete_connection = NULL;
+
     LIST_FOREACH(controller->connections, first, next, cur){
         AppConnection *not_ready_connection = (AppConnection *)cur->value;
         check(not_ready_connection != NULL, "Invalid value, not_ready_connection is NULL");
 
         if(not_ready_connection->socket == socket){
             enum AppConnectionStatus status = connection_type(package->type);
-            AppConnection *complete_connection = AppConnection_create(status,
+            complete_connection = AppConnection_create(status,
                                                             socket,
                                                             package->port,
                                                             package->destination,
@@ -62,11 +65,11 @@ int MIPTPAppController_handle_app_package(MIPTPAppController *controller, int so
             // Remove and destroy the tmp connection
             List_remove(controller->connections, cur);
             AppConnection_destroy(not_ready_connection);
-
-            // Add the new complete connection to the connections list
             List_push(controller->connections, complete_connection);
+            break;
         }
     }
+
     return 1;
 
     error:
@@ -80,7 +83,7 @@ int MIPTPAppController_handle_mipd_package(MIPTPAppController *app_controller, i
     check(message != NULL, "Bad argument, MIPDMessage message is NULL");
     int rc = 0;
     MIPTPPackage *package = NULL;
-    package = MIPTPPackage_deserialize(message->data);
+    package = MIPTPPackage_deserialize(message->data, message->data_size);
     check(package != NULL, "Failed to deserialize MIPTPPackage");
 
     LIST_FOREACH(app_controller->connections, first, next, cur){
@@ -115,8 +118,9 @@ int MIPTPAppController_handle_connection(MIPTPAppController *app_controller, int
 
     // TODO parse domain socket
     AppConnection  *connection = AppConnection_create_not_ready(new_socket);
+    check(connection != NULL, "Error - new AppConnection is NULL");
 
-    List_push(app_controller->connections ,connection);
+    List_push(app_controller->connections, connection);
 
     return new_socket;
 
@@ -182,9 +186,17 @@ int MIPTPAppController_handle_outgoing(MIPTPAppController *controller){
             // TODO - Push on the network
             MIPTPPackage *package = (MIPTPPackage *)q_cur->value;
             check(package != NULL, "Invalid state, MIPTPPackage is NULL");
+            
+            BYTE p_buffer[MAX_MIPTP_PACKAGE_SIZE];
+            rc = MIPTPPackage_serialize(&p_buffer, package);
+            check(rc != -1, "Failed to serialise MIPTPPackage package");
 
-            rc = MIPTPAppController_send_MIPTPPackage(controller, controller->mipd_socket, package);
-            check(rc != -1, "Failed to send package(seqnr: %d, port: %d) to mipd", package->miptp_header.PSN, package->miptp_header.port);
+            MIPDMessage *message = MIPDMessage_create(connection->connected_mip, rc, &p_buffer);
+            check(message != NULL, "Failed to create MIPDMessage message");
+
+            rc = MIPTPAppController_send_MIPDMessage(controller, controller->mipd_socket, message);
+            check(rc != -1, "Failed to send package(seqnr: %d, port: %d) to mipd on sock: %d", package->miptp_header.PSN, package->miptp_header.port, controller->mipd_socket);
+            MIPTPPackage_destroy(package);
         }
         Queue_destroy(next_packages);
     }
@@ -221,22 +233,22 @@ int MIPTPAppController_handle_completes(MIPTPAppController *controller){
 }
 
 
-int MIPTPAppController_send_MIPTPPackage(MIPTPAppController *controller, int socket, MIPTPPackage *package){
-    check(controller != NULL, "controller argument is NULL");
-    check(package != NULL, "package argument is NULL");
+int MIPTPAppController_send_MIPDMessage(MIPTPAppController *controller, int socket, MIPDMessage *message){
+    BYTE m_buffer[MAX_MIPMESSAGE_SIZE];
     int rc = 0;
-    BYTE *s_package = calloc(sizeof(MIPTPPackage) + package->data_size, sizeof(BYTE));
-    check_mem(s_package);
+    uint16_t message_size = 0;
+    check(controller != NULL, "controller argument is NULL");
+    check(message != NULL, "package argument is NULL");
+    
 
-    rc = MIPTPPackage_serialize(s_package, package);
-    check(rc != -1, "Bad seralization of the package");
+    message_size = MIPDMessage_serialize(&m_buffer, message);
+    check(message_size != -1, "Bad seralization of the package");
 
-    rc = send(socket, s_package, rc, 0);
-    check(rc != -1, "Failed to send the package to mipd - socket: %d\tbytes: %d", socket, rc);
+    rc = send(socket, &m_buffer, message_size, 0);
+    check(rc != -1, "Failed to send the package to mipd - socket: %d\tbytes: %d", socket, message_size);
+    printf("sent package to mipd\tmip dest: %d\tmessage_size: %d\n",message->mip_address, message_size);
 
-    MIPTPPackage_destroy(package);
-    if(s_package) free(s_package);
-
+    MIPDMessage_destroy(message);
     return 1;
 
     error:

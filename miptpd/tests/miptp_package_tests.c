@@ -24,11 +24,11 @@ char *test_MIPTPPackage_deserialize() {
     MIPTPPackage *package = MIPTPPackage_create(16383, 1, "Hello", strlen("Hello"));
     mu_assert(package != NULL, "Failed to create MIPTPPackage");
 
-    BYTE *s_package = calloc(sizeof(MIPTPPackage) + package->data_size, sizeof(BYTE));
+    BYTE *s_package = calloc(sizeof(MIPTPHeader) + package->data_size, sizeof(BYTE));
     byte_size = MIPTPPackage_serialize(s_package, package);
     mu_assert(s_package != NULL, "Failed to serialize MIPTPPackage");
 
-    MIPTPPackage *package2 = MIPTPPackage_deserialize(s_package);
+    MIPTPPackage *package2 = MIPTPPackage_deserialize(s_package, byte_size);
     mu_assert(package2 != NULL, "Failed to deserialize MIPTPPackage");
     mu_assert(package->miptp_header.PL == package2->miptp_header.PL, "PL is not correct after deseralization");
     mu_assert(package->miptp_header.port == package2->miptp_header.port, "port is not correct after deseralization");

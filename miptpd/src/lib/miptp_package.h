@@ -5,6 +5,9 @@
 
 #include "../../../commons/src/definitions.h"
 
+#define MAX_MIPTP_PACKAGE_SIZE 1496
+#define MAX_MIPTP_PACKAGE_DATA_SIZE 1492
+
 struct MIPTPHeader
 {
     uint8_t PL: 2;
@@ -33,15 +36,15 @@ void MIPTPPackage_destroy(MIPTPPackage *package);
         - data_size:    2 bytes 
         - data:         max 1492 bits
 */
-size_t MIPTPPackage_serialize(BYTE *buffer, MIPTPPackage *package);
+uint16_t MIPTPPackage_serialize(BYTE *buffer, MIPTPPackage *package);
 
-MIPTPPackage *MIPTPPackage_deserialize(BYTE *s_package);
+MIPTPPackage *MIPTPPackage_deserialize(BYTE *s_package, uint16_t package_size);
 
 MIPTPPackage_serialized_get_header(BYTE *s_package, MIPTPHeader *header);
 
 MIPTPPackage_serialized_get_data_size(BYTE *s_package, uint16_t *data_size);
 
-MIPTPPackage_serialized_get_data(BYTE *s_package, BYTE *data);
+MIPTPPackage_serialized_get_data(BYTE *s_package, BYTE *data, uint16_t data_size);
 
 uint8_t calc_pl(uint16_t data_size);
 

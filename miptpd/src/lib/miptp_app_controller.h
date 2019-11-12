@@ -40,7 +40,7 @@ int MIPTPAppController_handle_outgoing(MIPTPAppController *controller);
 
 int MIPTPAppController_handle_completes(MIPTPAppController *controller);
 
-int MIPTPAppController_send_MIPTPPackage(MIPTPAppController *controller, int socket, MIPTPPackage *package);
+int MIPTPAppController_send_MIPDMessage(MIPTPAppController *controller, int socket, MIPDMessage *message);
 
 int MIPTPAppController_send_ClientPackage(MIPTPAppController *controller, int socket, ClientPackage *package);
 

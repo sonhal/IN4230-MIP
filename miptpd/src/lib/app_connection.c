@@ -55,7 +55,7 @@ AppConnection_create(enum AppConnectionStatus status,
 
     connection->socket = socket;
     connection->port = port;
-    connection->connected_mip;
+    connection->connected_mip = destination;
     connection->status = status;
     connection->r_job = NULL;
     connection->s_job = NULL;

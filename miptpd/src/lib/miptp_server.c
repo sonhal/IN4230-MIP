@@ -67,7 +67,7 @@ int MIPTPServer_init(MIPTPServer *server){
     check(server->epoll_fd != -1, "Failed to setup epoll");
 
     // Set the correct mipd socket in the AppController
-    server->app_controller->mipd_socket = server->mipd_socket;
+    server->app_controller->mipd_socket = server->mipd_fd;
 
     MIPTPServer_log(server, "MIPTPServer is initialized in debug mode");
 
@@ -97,13 +97,15 @@ int MIPTPServer_run(MIPTPServer *server){
         int i = 0;
         for(i = 0; i < event_count; i++){
             memset(read_buffer, '\0', PACKET_BUFFER_SIZE);
+            bytes_read = 0;
 
             if(events[i].data.fd == server->mipd_fd){
                 MIPTPServer_log(server, "mipd event");
                 bytes_read = read(events[i].data.fd, read_buffer, PACKET_BUFFER_SIZE);
-                if(bytes_read == 0){
+                if(bytes_read == 0 || bytes_read == -1){
                     MIPTPServer_log(server, "MIPD has disconnected, shutting down");
-                    return 1;
+                    close(server->mipd_fd);
+                    running = 0;
                 }else {           
                     rc = MIPTPAppController_handle_mipd_package(server->app_controller, events[i].data.fd, &read_buffer);
                     check(rc != -1, "Failed to handle package from mipd");

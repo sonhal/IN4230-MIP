@@ -15,6 +15,7 @@ char *test_MIPDMessage_serialize() {
     s_size = MIPDMessage_serialize(serialized_message, message);
     mu_assert(serialized_message != NULL, "Failed to serialize message");
     mu_assert(s_size != 0, "Failed to serialize message, size is 0");
+    mu_assert(s_size == (sizeof(MIP_ADDRESS) + sizeof(uint16_t) + strlen("Hello")), "Wrong serialize size");
     char *ser_string = calloc(MAX_MIPMESSAGE_DATA_SIZE, sizeof(BYTE));
 
     MIPDMessage_serialized_get_data(serialized_message, ser_string);
@@ -23,6 +24,8 @@ char *test_MIPDMessage_serialize() {
     MIP_ADDRESS destination = 0;
     MIPDMessage_serialized_get_address(serialized_message, &destination);
     mu_assert(destination == 110, "Failed to get destination from serialized message");
+
+
 
     MIPDMessage_destroy(message);
     free(serialized_message);
