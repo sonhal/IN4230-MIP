@@ -129,7 +129,7 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
                                         received_package->m_header.src_addr,
                                         received_package->m_header.dst_addr,
                                         timetolive);
-                                        
+
             }else {
                 received_package->m_header.ttl--;
                 rc = request_forwarding(server, received_package->m_header.dst_addr, received_package);
@@ -147,6 +147,7 @@ int handle_raw_socket_frame(MIPDServer *server, struct epoll_event *event){
         return -1;
 }
 
+// Does not free message
 // Handle a request to send a message on the domain socket, returns 1 on success, 0 on non critical error and -1 on critical error
 int handle_domain_socket_request(MIPDServer *server, MIPDMessage *message){
     int rc = 0;
@@ -183,13 +184,11 @@ int handle_domain_socket_request(MIPDServer *server, MIPDMessage *message){
     check(rc != -1, "Failed to send transport packet");
     MIPDServer_log(server, " Domain message sent");
 
-    MIPDMessage_destroy(message);
     free(e_frame);
     free(m_header);
     return 0;
 
     error:
-        if(message) MIPDMessage_destroy(message);
         if(e_frame)free(e_frame);
         if(m_header)free(m_header);
         return -1;
@@ -261,7 +260,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                 continue;
             }
 
-             // New reponse from routerd on forwarding mip packet
+            // New reponse from routerd on forwarding mip packet
             else if(events[i].data.fd == server->forward_socket->connected_socket_fd)
             {
                 MIP_ADDRESS *forward_response = calloc(1, sizeof(MIP_ADDRESS));
@@ -308,7 +307,7 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                 } else {
                     // Parse message on domain socket
                     MIPDMessage *message = MIPDMessage_deserialize(read_buffer);
-                    MIPDServer_log(server, "ping message - dst:%d\tcontent:%s", message->mip_address, message->data);
+                    MIPDServer_log(server, "ping message - dst:%d\tsize: %d\tcontent:%s", message->mip_address, message->data_size, message->data);
 
                     rc = handle_domain_socket_request(server, message);
                     check(rc != -1, "Failed to handle domain socket event");
@@ -318,6 +317,9 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                         check(message_package != NULL, "Failed to create ping message MIPPackage");
                         rc = request_forwarding(server, message->mip_address, message_package);
                         check(rc != -1, "Failed to request forwarding, routerd might not be connected")
+                    } else {
+                        // Clean up message if it was passed to app
+                        MIPDMessage_destroy(message);
                     }
                 }
                 continue;
