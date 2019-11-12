@@ -91,7 +91,7 @@ int MIPTPServer_run(MIPTPServer *server){
         event_count = epoll_wait(server->epoll_fd, &events, EVENTS_BUFFER_SIZE, POLLING_TIMEOUT);
 
         // Cycle the running jobs
-        rc = MIPTPAppController_pump(server->app_controller);
+        rc = MIPTPAppController_handle_outgoing(server->app_controller);
         check(rc != -1, "Failed to cycle app controller jobs");
 
         int i = 0;
@@ -127,7 +127,7 @@ int MIPTPServer_run(MIPTPServer *server){
                     check(rc != -1, "Error, failed to disconnect AppConnection");
                     MIPTPServer_log(server, "Application disconnect");
                 }else {           
-                    rc = MIPTPAppController_handle_package(server->app_controller, events[i].data.fd, &read_buffer);
+                    rc = MIPTPAppController_handle_app_package(server->app_controller, events[i].data.fd, &read_buffer);
                     check(rc != -1, "Failed to handle package from application");
                 }
                 continue;
