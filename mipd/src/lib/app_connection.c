@@ -187,12 +187,12 @@ int handle_MIPPackage_for_application(MIPDServer *server, MIPPackage *received_p
         return 0;
     }
     int rc = 0;
+    BYTE s_message[MAX_MIPMESSAGE_SIZE];
     MIPDMessage *message = MIPDMessage_create(received_package->m_header.src_addr, received_package->message, received_package->m_header.payload_len * 4); // TODO does this work?
-    BYTE *s_message[MAX_MIPMESSAGE_SIZE];
     rc = MIPDMessage_serialize(&s_message, message);
     check(rc != -1, "Failed to serialize MIPDMessage");
 
-    rc = send(server->app_socket->connected_socket_fd, s_message, rc, 0);
+    rc = send(server->app_socket->connected_socket_fd, &s_message, rc, 0);
     MIPDMessage_destroy(message);
     check(rc != -1, "Failed to write received message to domain socket: %d", server->app_socket->connected_socket_fd);
     
