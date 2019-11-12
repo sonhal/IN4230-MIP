@@ -160,6 +160,7 @@ int read_from_domain_socket(int socket_fd, BYTE *buffer, size_t buffer_size){
         return -1;
 }
 
+// Does not free MIPDMessage message
 // Returns a empty MIPPackage with the provided MIPDMessage to be added to queue
 MIPPackage *create_queueable_MIPDMessage_MIPPackage(MIPDMessage *message){
     check(message != NULL, "Invalid arguemnt, message is NULL");
@@ -170,8 +171,6 @@ MIPPackage *create_queueable_MIPDMessage_MIPPackage(MIPDMessage *message){
     // Create MIP packet
     m_package = MIPPackage_create_raw(255, &default_mac, message->mip_address, &default_mac, message->data, message->data_size, 3);
     check(m_package != NULL, "Failed to create MIPPackage");
-
-    MIPDMessage_destroy(message);
 
     return m_package;
 

@@ -315,12 +315,11 @@ int MIPDServer_run(MIPDServer *server, int epoll_fd, struct epoll_event *events,
                         // MIP address is not a neighbor
                         MIPPackage *message_package = create_queueable_MIPDMessage_MIPPackage(message);
                         check(message_package != NULL, "Failed to create ping message MIPPackage");
-                        rc = request_forwarding(server, message->mip_address, message_package);
+                        rc = request_forwarding(server, message_package->m_header.dst_addr, message_package);
                         check(rc != -1, "Failed to request forwarding, routerd might not be connected")
-                    } else {
-                        // Clean up message if it was passed to app
-                        MIPDMessage_destroy(message);
                     }
+                    // Clean up message as it has been send to neighbor or the data has been safe copied
+                    MIPDMessage_destroy(message);
                 }
                 continue;
             }
