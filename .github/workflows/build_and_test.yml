@@ -21,3 +21,4 @@ jobs:
         scp -oStrictHostKeyChecking=no -v -C -i vm_key -r bin/ debian@158.37.63.151:/home/debian/
         rm -f vm_key
 
+Hei
