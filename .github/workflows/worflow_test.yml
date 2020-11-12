@@ -1,0 +1,24 @@
+
+name: CI nummero dos
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    - run: echo ::set-env name=TAG::$(echo ${{ github.sha }} | cut -c1-7)
+    - name: make
+      run: make
+    - name: deploy
+      env: # Or as an environment variable
+        SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+      run: |
+        touch vm_key
+        echo "$SSH_KEY" > vm_key
+        chmod 600 vm_key
+        scp -oStrictHostKeyChecking=no -v -C -i vm_key -r bin/ debian@158.37.63.151:/home/debian/
+        rm -f vm_key
