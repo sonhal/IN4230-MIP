@@ -9,6 +9,7 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+    - run: echo ::set-env name=TAG::$(echo ${{ github.sha }} | cut -c1-7)
     - name: make
       run: make
     - name: deploy
